@@ -1,0 +1,181 @@
+{
+  "title": "RxJS Deep Dive: Stream Signature Reference",
+  "repository": "https://github.com/hansschenker/rxjs-ts-shorthand-notation",
+  "course": "RxJS Deep Dive",
+  "rxjsVersion": "7.8.2",
+  "edition": "1.0",
+  "date": "2026-10-12",
+  "owner": "Hans Schenker",
+  "attribution": "These definitions and teaching notes were created with the help of GPT-6 Astra, under the course direction of Hans Schenker.",
+  "notationSummary": "Cω-inspired stream shorthand that translates into ordinary TypeScript types. It is explanatory notation, not syntax accepted by the TypeScript compiler.",
+  "legend": [
+    [
+      "A, B",
+      "Input and output payload types. S is accumulated state; K is a key; O is an opening-signal payload; R is a registration token; D is a default-value type."
+    ],
+    [
+      "A*",
+      "Observable<A>: a stream with zero or more next values per subscription. The type does not promise values, completion, a clock, or shared execution."
+    ],
+    [
+      "A? / A! / A+",
+      "Optional occurrence refinements: zero or one / exactly one / one or more next values. State the lifetime and termination assumptions. Ordinary Observable<A> does not enforce these bounds."
+    ],
+    [
+      "A[] / (A[])*",
+      "An array value / an Observable whose next values are arrays."
+    ],
+    [
+      "[A*, B*] / [A, B]*",
+      "A tuple of two sources / a stream of two-value tuples."
+    ],
+    [
+      "(A*)*",
+      "An outer stream whose next values are inner streams."
+    ],
+    [
+      "A => B",
+      "A value function; in TypeScript write (value: A) => B."
+    ],
+    [
+      "A* => B*",
+      "A source-to-result transformation; in TypeScript write (source: Observable<A>) => Observable<B>."
+    ],
+    [
+      "Input<A>",
+      "ObservableInput<A>: Observable, promise-like, iterable, async iterable, array-like, interoperable Observable, or readable-stream-like input."
+    ],
+    [
+      "(A | B)*",
+      "A stream whose next values can belong to either payload type."
+    ],
+    [
+      "A & B",
+      "A value satisfying both structural requirements; used for a group stream with a key property."
+    ],
+    [
+      "never*",
+      "No next payload values. Completion, error, or remaining open must be described separately."
+    ],
+    [
+      "Notice<A>",
+      "ObservableNotification<A>: { kind: \"N\"; value: A } | { kind: \"E\"; error: unknown } | { kind: \"C\" }."
+    ],
+    [
+      "param?: Type",
+      "An optional configuration parameter. This question mark is parameter syntax, not the stream-cardinality suffix."
+    ]
+  ],
+  "globalNotes": [
+    "The cards show selected common forms. Callback indices, some optional parameters, and the exhaustive overload sets live in the linked API and pinned source.",
+    "Creation functions return Observables directly. Most pipeable functions return transformations used by pipe; partition and connectable forms have explicitly different result shapes.",
+    "Unless a card says otherwise, next, error, complete, and unsubscription are separate concerns. Unsubscription is not a complete notification.",
+    "Examples omit imports and generally show Observable expressions, not subscribe calls. Their next/complete comments describe a subscription allowed to finish; external-request outcomes remain conditional.",
+    "Durations normally use milliseconds with asyncScheduler. A supplied scheduler can provide a different or virtual clock. Integer counts and positive concurrency limits are the teaching defaults.",
+    "null and undefined are ordinary emitted values. of(undefined) emits once; EMPTY emits no next values.",
+    "An operator factory builds a description. Work starts through subscription, although argument expressions and eager input creation may already have run.",
+    "Shorthand describes type shape. Read the adjacent behavior policy and execution details before claiming two operators are equivalent."
+  ],
+  "categoryIntros": {
+    "Creation Operators": "Start from values, callbacks, events, requests, or a clock. Read when work begins and how the subscription ends.",
+    "Join Creation Operators": "Supply all sources directly. Tuple joins preserve positions; union joins forward values from different sources.",
+    "Transformation Operators": "Change payloads, accumulate state, group values, or choose an Action Policy for inner subscriptions.",
+    "Filtering Operators": "Choose which values pass. Similar A* => A* shapes can have very different gates, deadlines, and completion rules.",
+    "Join Operators": "Combine a primary source with companions, or flatten an outer stream. Read who triggers output and when inner subscriptions start.",
+    "Multicasting Operators": "Choose how listeners share source connections and what later listeners receive. Type shape alone does not specify this policy.",
+    "Error Handling Operators": "Choose whether an error terminates, selects another input, or requests another subscription.",
+    "Utility Operators": "Observe execution, schedule work or delivery, measure time, enforce deadlines, or convert notifications.",
+    "Conditional and Boolean Operators": "Answer questions about a subscription. Many answers require completion; a counterexample can sometimes end the search early.",
+    "Mathematical and Aggregate Operators": "Produce a final aggregate when the source completes. Compare with scan when learners need every intermediate state."
+  },
+  "glossary": [
+    [
+      "SchedulerLike",
+      "A scheduler supplies now() and scheduling operations. It can represent real or virtual time; choosing one does not imply another thread."
+    ],
+    [
+      "TimestampProvider",
+      "A clock object with now(): number. It measures time and need not schedule work."
+    ],
+    [
+      "ThrottleConfig",
+      "An object with optional leading and trailing booleans. Defaults: leading true, trailing false."
+    ],
+    [
+      "RetryConfig / RepeatConfig",
+      "Retry uses count?, delay?, resetOnSuccess?; repeat uses count? and delay?. Retry count means retries after the original run; repeat count means total runs."
+    ],
+    [
+      "ShareConfig<A>",
+      "Selects a connector and resetOnError, resetOnComplete, and resetOnRefCountZero policies. Each reset can be a boolean or a callback returning a reset notifier."
+    ],
+    [
+      "ShareReplayConfig",
+      "Requires refCount in the typed object form; bufferSize, windowTime, and scheduler are optional. Prefer explicit bounded buffering and an explicit refCount decision."
+    ],
+    [
+      "ConnectConfig<A>",
+      "A selector-sharing configuration with a required connector factory returning a SubjectLike<A>."
+    ],
+    [
+      "ConnectableConfig<A>",
+      "An explicit-connection configuration with a required connector when an object is supplied, and optional resetOnDisconnect. This name comes from the implementation; it is not a root-exported RxJS 7.8.2 type."
+    ],
+    [
+      "Connectable<A>",
+      "An Observable<A> that also exposes connect(): Subscription. The modern connectable() factory returns this shape."
+    ],
+    [
+      "ConnectableObservable<A>",
+      "The legacy connectable class shape, carrying older connection and refCount machinery. It is distinct from the minimal modern Connectable<A> interface."
+    ],
+    [
+      "Subject<A> / SubjectLike<A>",
+      "A Subject can receive next/error/complete and be subscribed to as an Observable. SubjectLike names the structural observer-and-subscribable contract. Its subtype determines replay and terminal behavior."
+    ],
+    [
+      "Observer<A> / Subscription / Unsubscribable",
+      "An Observer handles next/error/complete. A Subscription manages teardown. Unsubscribable is the smaller contract with unsubscribe(): void."
+    ],
+    [
+      "GroupedObservable<K, A>",
+      "An Observable<A> with a key: K property. The shorthand (A* & { readonly key: K }) preserves both stream shape and the group key."
+    ],
+    [
+      "TimeoutConfig<A, B*> / TimeoutInfo<A>",
+      "TimeoutConfig names first?, each?, scheduler?, with?, and meta?. TimeoutInfo carries meta, seen, and lastValue. The shorthand specializes its fallback ObservableInput parameter to B*."
+    ],
+    [
+      "Notice<A>",
+      "The structural N/E/C notification union defined in the legend. materialize returns Notification instances compatible with that union; dematerialize accepts the structural union."
+    ],
+    [
+      "AjaxConfig / AjaxResponse<A>",
+      "AjaxConfig chooses the XMLHttpRequest request and progress options. AjaxResponse<A> is the wrapper whose response field contains A; selecting a type does not validate a server response."
+    ],
+    [
+      "WebSocketSubjectConfig<A> / WebSocketSubject<A>",
+      "The config supplies connection, serialization, and deserialization options. The result is both a stream of received A values and an outgoing next(value) interface."
+    ],
+    [
+      "EventTarget / AddEventListenerOptions",
+      "The selected DOM event target and its capture, once, and passive listener options. fromEvent also supports other event-source protocols."
+    ],
+    [
+      "Request / RequestInit / Response",
+      "The platform fetch request, request-options, and response types. The response body is consumed separately unless the fromFetch selector includes it."
+    ],
+    [
+      "Date",
+      "A JavaScript absolute date value, interpreted by the relevant operator against its supplied clock."
+    ],
+    [
+      "Record<string, A> / A[K] / keyof A",
+      "A string-keyed record; the value type at property K; and the permitted property-key types of A. Known-property shorthand assumes K extends keyof A."
+    ],
+    [
+      "Exclude<A, B> / readonly",
+      "Exclude removes union members assignable to B; readonly forbids assignment through that property in TypeScript. Neither performs runtime validation."
+    ]
+  ]
+}

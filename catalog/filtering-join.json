@@ -1,0 +1,922 @@
+[
+  {
+    "id": "audit",
+    "name": "audit",
+    "category": "Filtering Operators",
+    "kind": "pipeable",
+    "status": "current",
+    "signature": "audit(durationSelector: A => unknown*): A* => A*",
+    "behavior": "The first value starts a duration. While that duration is active, remember the latest source value; emit it when the duration sends a next notification.",
+    "details": [
+      "New source values replace the pending value without restarting the active duration.",
+      "Duration completion without a next notification closes the duration without emitting the pending value.",
+      "Source completion waits for an active duration: a duration next releases the pending value before completion, while a duration completion without next discards it.",
+      "A source or duration error terminates the result and discards the pending value."
+    ],
+    "example": "of(1, 2, 3).pipe(audit(() => timer(10))) // next: 3 when the duration signals; complete",
+    "overloads": "The duration selector also accepts other ObservableInput values, including promises. Its emitted payload is ignored.",
+    "related": ["auditTime", "debounce", "throttle", "sample"],
+    "source": "internal/operators/audit.ts",
+    "doc": "https://rxjs.dev/api/operators/audit",
+    "import": "rxjs"
+  },
+  {
+    "id": "auditTime",
+    "name": "auditTime",
+    "category": "Filtering Operators",
+    "kind": "pipeable",
+    "status": "current",
+    "signature": "auditTime(duration: number, scheduler?: SchedulerLike): A* => A*",
+    "behavior": "The first value opens a timed interval. Emit the latest value at the end of that interval, then wait for another source value to open the next interval.",
+    "details": [
+      "Values arriving during an interval replace the pending value without moving its deadline.",
+      "Intervals are started by source values; there is no continuously running sampling clock.",
+      "Source completion waits for an active interval and its pending emission. An error or downstream unsubscription discards that pending value.",
+      "The scheduler defaults to asyncScheduler; duration is measured in its time units, normally milliseconds."
+    ],
+    "example": "of(1, 2, 3).pipe(auditTime(10)) // next: 3 after the interval; complete",
+    "overloads": "Equivalent to audit(() => timer(duration, scheduler)).",
+    "related": ["audit", "debounceTime", "sampleTime", "throttleTime"],
+    "source": "internal/operators/auditTime.ts",
+    "doc": "https://rxjs.dev/api/operators/auditTime",
+    "import": "rxjs"
+  },
+  {
+    "id": "debounce",
+    "name": "debounce",
+    "category": "Filtering Operators",
+    "kind": "pipeable",
+    "status": "current",
+    "signature": "debounce(durationSelector: A => unknown*): A* => A*",
+    "behavior": "Each source value replaces the pending value and starts a new duration. Emit that value if its duration sends a next notification before another source value arrives.",
+    "details": [
+      "Every new source value unsubscribes the previous duration and chooses a replacement duration.",
+      "Duration completion without next does not release the pending value.",
+      "Source completion immediately emits any pending value and then completes, even if the duration has not signaled.",
+      "An error or downstream unsubscription discards the pending value."
+    ],
+    "example": "of(1, 2, 3).pipe(debounce(() => timer(10))) // next: 3 immediately on source completion; complete",
+    "overloads": "The duration selector also accepts other ObservableInput values. The duration payload is ignored.",
+    "related": ["debounceTime", "audit", "switchMap"],
+    "source": "internal/operators/debounce.ts",
+    "doc": "https://rxjs.dev/api/operators/debounce",
+    "import": "rxjs"
+  },
+  {
+    "id": "debounceTime",
+    "name": "debounceTime",
+    "category": "Filtering Operators",
+    "kind": "pipeable",
+    "status": "current",
+    "signature": "debounceTime(dueTime: number, scheduler?: SchedulerLike): A* => A*",
+    "behavior": "Wait for a quiet period after a source value, then emit the latest pending value. Each new value moves the deadline.",
+    "details": [
+      "A continuously busy source can keep replacing the pending value without producing output.",
+      "Source completion immediately releases the pending value and then completes; it does not wait out the remaining delay.",
+      "A source error or downstream unsubscription discards the pending value.",
+      "The scheduler defaults to asyncScheduler; dueTime uses its time units, normally milliseconds."
+    ],
+    "example": "of(1, 2, 3).pipe(debounceTime(10)) // next: 3 immediately on source completion; complete",
+    "overloads": "The output remains A*: the operator can emit many values across separate quiet periods.",
+    "related": ["debounce", "auditTime", "throttleTime", "sampleTime"],
+    "source": "internal/operators/debounceTime.ts",
+    "doc": "https://rxjs.dev/api/operators/debounceTime",
+    "import": "rxjs"
+  },
+  {
+    "id": "distinct",
+    "name": "distinct",
+    "category": "Filtering Operators",
+    "kind": "pipeable",
+    "status": "current",
+    "signature": "distinct(keySelector?: A => K, flushes?: unknown*): A* => A*",
+    "behavior": "Emit a source value only when its selected key has not been seen in this subscription since the last flush.",
+    "details": [
+      "Without a key selector, the source value itself is the key. Keys are stored in a JavaScript Set: objects compare by identity and repeated NaN keys count as duplicates.",
+      "A flushes next notification clears the remembered keys; flushes completion alone does not clear them or complete the result.",
+      "The remembered set can grow for the lifetime of a subscription; supplying a key selector does not impose a size limit."
+    ],
+    "example": "of(1, 1, 2, 1, 3, 2).pipe(distinct()) // next: 1, 2, 3; complete",
+    "overloads": "K is the selected key type. The optional flushes input also accepts other ObservableInput values.",
+    "related": ["distinctUntilChanged", "distinctUntilKeyChanged", "filter"],
+    "source": "internal/operators/distinct.ts",
+    "doc": "https://rxjs.dev/api/operators/distinct",
+    "import": "rxjs"
+  },
+  {
+    "id": "distinctUntilChanged",
+    "name": "distinctUntilChanged",
+    "category": "Filtering Operators",
+    "kind": "pipeable",
+    "status": "current",
+    "signature": "distinctUntilChanged(compare?: (A, A) => boolean): A* => A*",
+    "behavior": "Emit the first value, then emit a later value only when the comparator says it differs from the last emitted value.",
+    "details": [
+      "Comparator true suppresses the new value; comparator false emits it and updates the remembered value.",
+      "The default comparator is ===. It does not perform a deep object comparison.",
+      "Suppressed values do not replace the comparison baseline; only the last emitted value is remembered."
+    ],
+    "example": "of(1, 1, 2, 2, 1).pipe(distinctUntilChanged()) // next: 1, 2, 1; complete",
+    "overloads": "The key-selector form is distinctUntilChanged(compare: (K, K) => boolean, keySelector: A => K): A* => A*. It compares selected keys but emits the original A values.",
+    "related": ["distinct", "distinctUntilKeyChanged", "pairwise"],
+    "source": "internal/operators/distinctUntilChanged.ts",
+    "doc": "https://rxjs.dev/api/operators/distinctUntilChanged",
+    "import": "rxjs"
+  },
+  {
+    "id": "distinctUntilKeyChanged",
+    "name": "distinctUntilKeyChanged",
+    "category": "Filtering Operators",
+    "kind": "pipeable",
+    "status": "current",
+    "signature": "distinctUntilKeyChanged(key: K, compare?: (A[K], A[K]) => boolean): A* => A*",
+    "behavior": "Emit the first object, then suppress objects whose chosen property compares equal to that property on the last emitted object.",
+    "details": [
+      "The default comparison is ===; a custom comparator returning true suppresses the new object.",
+      "The entire object is emitted, including properties that were not compared.",
+      "The previous object is retained by reference, so mutating it can change a later comparison."
+    ],
+    "example": "of({ id: 1 }, { id: 1 }, { id: 2 }).pipe(distinctUntilKeyChanged('id')) // next: { id: 1 }, { id: 2 }; complete",
+    "overloads": "K extends keyof A; A[K] is the type of the selected property.",
+    "related": ["distinctUntilChanged", "distinct", "filter"],
+    "source": "internal/operators/distinctUntilKeyChanged.ts",
+    "doc": "https://rxjs.dev/api/operators/distinctUntilKeyChanged",
+    "import": "rxjs"
+  },
+  {
+    "id": "elementAt",
+    "name": "elementAt",
+    "category": "Filtering Operators",
+    "kind": "pipeable",
+    "status": "current",
+    "signature": "elementAt(index: number): A* => A*",
+    "behavior": "Emit the value at a zero-based position, then complete and unsubscribe from the source.",
+    "details": [
+      "At most one value is emitted. Counting begins with the first value observed by this subscription.",
+      "If the source completes before that position exists, the selected form errors with ArgumentOutOfRangeError.",
+      "A negative index throws when elementAt is called, before subscription."
+    ],
+    "example": "of('a', 'b', 'c').pipe(elementAt(1)) // next: 'b'; complete",
+    "overloads": "Use a non-negative integer index. Providing defaultValue: D changes the output to (A | D)* and emits the default on normal completion if the position was not reached.",
+    "related": ["first", "take", "skip", "single"],
+    "source": "internal/operators/elementAt.ts",
+    "doc": "https://rxjs.dev/api/operators/elementAt",
+    "import": "rxjs"
+  },
+  {
+    "id": "filter",
+    "name": "filter",
+    "category": "Filtering Operators",
+    "kind": "pipeable",
+    "status": "current",
+    "signature": "filter(predicate: A => boolean): A* => A*",
+    "behavior": "Keep each source value whose predicate returns true. Other values contribute no output.",
+    "details": [
+      "The predicate is evaluated independently for each source value; a rejection does not stop later values from being tested.",
+      "Values that pass are forwarded during the source notification; filter adds no scheduling step.",
+      "The full result is A*: an individual input can contribute zero or one value, but the subscription can emit many values."
+    ],
+    "example": "of(1, 2, 3, 4).pipe(filter(n => n % 2 === 0)) // next: 2, 4; complete",
+    "overloads": "The callback also receives a zero-based index. A type guard (value: A) => value is B, with B extends A, produces B*. Boolean has a truthiness-narrowing overload. Only overloads accepting thisArg are deprecated.",
+    "related": ["map", "takeWhile", "skipWhile", "partition"],
+    "source": "internal/operators/filter.ts",
+    "doc": "https://rxjs.dev/api/operators/filter",
+    "import": "rxjs"
+  },
+  {
+    "id": "first",
+    "name": "first",
+    "category": "Filtering Operators",
+    "kind": "pipeable",
+    "status": "current",
+    "signature": "first(predicate?: A => boolean): A* => A*",
+    "behavior": "Emit the first matching value and complete immediately. Without a predicate, the first source value matches.",
+    "details": [
+      "Once a match is emitted, the source subscription is closed; later values are not needed.",
+      "If the source completes without a match, the selected form errors with EmptyError.",
+      "An input that never matches and never completes can keep the result open without emitting."
+    ],
+    "example": "of(1, 2, 3).pipe(first(n => n > 1)) // next: 2; complete",
+    "overloads": "A second argument defaultValue: D changes the output to (A | D)* and replaces the no-match error on completion. Use first(null, defaultValue) without a predicate. Type-guard and Boolean overloads can narrow the payload; predicates also receive index and source.",
+    "related": ["take", "find", "last", "single", "elementAt"],
+    "source": "internal/operators/first.ts",
+    "doc": "https://rxjs.dev/api/operators/first",
+    "import": "rxjs"
+  },
+  {
+    "id": "ignoreElements",
+    "name": "ignoreElements",
+    "category": "Filtering Operators",
+    "kind": "pipeable",
+    "status": "current",
+    "signature": "ignoreElements(): A* => never*",
+    "behavior": "Suppress every next value while preserving the source's completion or error notification.",
+    "details": [
+      "The source is still subscribed and executes normally; ignoring its values does not prevent its side effects.",
+      "A source that never terminates leaves the result open. never* describes the absence of next values, not the termination behavior."
+    ],
+    "example": "of(1, 2, 3).pipe(ignoreElements()) // no next values; complete",
+    "overloads": "The native signature accepts unknown payloads and produces Observable<never>.",
+    "related": ["filter", "tap", "materialize", "endWith"],
+    "source": "internal/operators/ignoreElements.ts",
+    "doc": "https://rxjs.dev/api/operators/ignoreElements",
+    "import": "rxjs"
+  },
+  {
+    "id": "last",
+    "name": "last",
+    "category": "Filtering Operators",
+    "kind": "pipeable",
+    "status": "current",
+    "signature": "last(predicate?: A => boolean): A* => A*",
+    "behavior": "Remember the latest matching value and emit it when the source completes. Without a predicate, every source value matches.",
+    "details": [
+      "It must wait for normal source completion to know which matching value was last.",
+      "If the source completes without a match, the selected form errors with EmptyError.",
+      "A source error or downstream unsubscription discards the remembered value."
+    ],
+    "example": "of(1, 2, 3, 4).pipe(last(n => n % 2 === 1)) // next: 3 at source completion; complete",
+    "overloads": "A second argument defaultValue: D changes the output to (A | D)* and replaces the no-match error on completion. Use last(null, defaultValue) without a predicate. Type-guard and Boolean overloads can narrow the payload; predicates also receive index and source.",
+    "related": ["first", "takeLast", "single", "reduce"],
+    "source": "internal/operators/last.ts",
+    "doc": "https://rxjs.dev/api/operators/last",
+    "import": "rxjs"
+  },
+  {
+    "id": "sample",
+    "name": "sample",
+    "category": "Filtering Operators",
+    "kind": "pipeable",
+    "status": "current",
+    "signature": "sample(notifier: unknown*): A* => A*",
+    "behavior": "On each notifier next, emit the latest source value received since the previous sample. If no new source value arrived, emit nothing.",
+    "details": [
+      "Sampling clears the pending-value flag, so repeated notifier values do not replay the same source value.",
+      "Notifier completion is ignored. Source completion immediately completes the result without flushing a pending value.",
+      "The source is subscribed before the notifier; a synchronous source can finish before the notifier is subscribed.",
+      "A notifier error terminates the result, as does a source error."
+    ],
+    "example": "If the source emits 1 then 2 before a notifier next, that next releases 2. A second notifier next with no new source value emits nothing. Source completion then completes the result.",
+    "overloads": "The notifier also accepts other ObservableInput values. Its emitted payload is ignored.",
+    "related": ["sampleTime", "audit", "withLatestFrom"],
+    "source": "internal/operators/sample.ts",
+    "doc": "https://rxjs.dev/api/operators/sample",
+    "import": "rxjs"
+  },
+  {
+    "id": "sampleTime",
+    "name": "sampleTime",
+    "category": "Filtering Operators",
+    "kind": "pipeable",
+    "status": "current",
+    "signature": "sampleTime(period: number, scheduler?: SchedulerLike): A* => A*",
+    "behavior": "At regular clock ticks, emit the latest source value received since the previous tick. A tick with no new value produces no output.",
+    "details": [
+      "The sampling clock runs independently of source arrivals; arrivals do not move its next tick.",
+      "Source completion immediately completes the result and discards any value waiting for a later tick.",
+      "The scheduler defaults to asyncScheduler; period uses its time units, normally milliseconds."
+    ],
+    "example": "With a 10 ms period, values 1 at 2 ms and 2 at 7 ms produce 2 at the 10 ms tick. If the source completes at 15 ms, the result completes then.",
+    "overloads": "Equivalent to sample(interval(period, scheduler)).",
+    "related": ["sample", "auditTime", "debounceTime", "throttleTime"],
+    "source": "internal/operators/sampleTime.ts",
+    "doc": "https://rxjs.dev/api/operators/sampleTime",
+    "import": "rxjs"
+  },
+  {
+    "id": "single",
+    "name": "single",
+    "category": "Filtering Operators",
+    "kind": "pipeable",
+    "status": "current",
+    "signature": "single(predicate?: A => boolean): A* => A*",
+    "behavior": "Require exactly one matching value across the source. Emit that value only after source completion proves there was no second match.",
+    "details": [
+      "A second match causes an immediate SequenceError, without emitting the first match.",
+      "A source that completes without any values causes EmptyError.",
+      "A nonempty source that completes with no predicate match causes NotFoundError.",
+      "There is no default-value argument. A nonterminating source with only one match still cannot establish uniqueness."
+    ],
+    "example": "of(1, 2, 3).pipe(single(n => n % 2 === 0)) // next: 2 at source completion; complete",
+    "overloads": "Without a predicate, all source values count as matches. Predicates also receive index and source. A Boolean overload narrows truthy payloads.",
+    "related": ["first", "last", "find", "elementAt"],
+    "source": "internal/operators/single.ts",
+    "doc": "https://rxjs.dev/api/operators/single",
+    "import": "rxjs"
+  },
+  {
+    "id": "skip",
+    "name": "skip",
+    "category": "Filtering Operators",
+    "kind": "pipeable",
+    "status": "current",
+    "signature": "skip(count: number): A* => A*",
+    "behavior": "Discard the first count source values, then forward later values.",
+    "details": [
+      "Counting is local to each subscription and does not depend on elapsed time.",
+      "A source that completes before enough values arrive simply completes without output.",
+      "For count zero or below, values pass through."
+    ],
+    "example": "of(1, 2, 3, 4).pipe(skip(2)) // next: 3, 4; complete",
+    "overloads": "The teaching form assumes an integer count.",
+    "related": ["take", "skipWhile", "skipUntil", "skipLast"],
+    "source": "internal/operators/skip.ts",
+    "doc": "https://rxjs.dev/api/operators/skip",
+    "import": "rxjs"
+  },
+  {
+    "id": "skipLast",
+    "name": "skipLast",
+    "category": "Filtering Operators",
+    "kind": "pipeable",
+    "status": "current",
+    "signature": "skipLast(count: number): A* => A*",
+    "behavior": "Hold back the latest count values. Each later arrival releases the oldest held value; the final held values are discarded when the source ends.",
+    "details": [
+      "This introduces a lag measured in source values, not a timed delay.",
+      "Normal completion does not flush the held values. A source with at most count values completes without emitting.",
+      "Positive integer counts retain up to count values; zero or negative counts pass values through."
+    ],
+    "example": "of(1, 2, 3, 4).pipe(skipLast(2)) // next: 1 when 3 arrives, 2 when 4 arrives; complete",
+    "overloads": "The teaching form assumes an integer count.",
+    "related": ["takeLast", "skip", "delay"],
+    "source": "internal/operators/skipLast.ts",
+    "doc": "https://rxjs.dev/api/operators/skipLast",
+    "import": "rxjs"
+  },
+  {
+    "id": "skipUntil",
+    "name": "skipUntil",
+    "category": "Filtering Operators",
+    "kind": "pipeable",
+    "status": "current",
+    "signature": "skipUntil(notifier: unknown*): A* => A*",
+    "behavior": "Discard source values until the notifier sends its first next notification. Forward later source values from then on.",
+    "details": [
+      "The notifier is subscribed before the source, so a synchronous notifier next can open the gate before the first source value.",
+      "After opening the gate, the notifier is unsubscribed; it cannot close the gate again.",
+      "Notifier completion without next leaves the gate closed. Source completion still completes the result; notifier errors terminate it."
+    ],
+    "example": "of(1, 2, 3).pipe(skipUntil(of('go'))) // next: 1, 2, 3; complete",
+    "overloads": "The notifier also accepts other ObservableInput values; its payload is ignored.",
+    "related": ["takeUntil", "skipWhile", "skip"],
+    "source": "internal/operators/skipUntil.ts",
+    "doc": "https://rxjs.dev/api/operators/skipUntil",
+    "import": "rxjs"
+  },
+  {
+    "id": "skipWhile",
+    "name": "skipWhile",
+    "category": "Filtering Operators",
+    "kind": "pipeable",
+    "status": "current",
+    "signature": "skipWhile(predicate: A => boolean): A* => A*",
+    "behavior": "Discard the initial run of values for which the predicate is true. Emit the first value for which it is false and every later value.",
+    "details": [
+      "The predicate stops being called after its first false result.",
+      "Later values pass through even if they would have satisfied the original skipping condition.",
+      "If the predicate stays true until source completion, the result completes without values."
+    ],
+    "example": "of(1, 2, 3, 1).pipe(skipWhile(n => n < 3)) // next: 3, 1; complete",
+    "overloads": "The callback also receives a zero-based index. Native overloads include Boolean and an always-true predicate; skipWhile does not generally provide type-guard narrowing for later values.",
+    "related": ["takeWhile", "filter", "skipUntil"],
+    "source": "internal/operators/skipWhile.ts",
+    "doc": "https://rxjs.dev/api/operators/skipWhile",
+    "import": "rxjs"
+  },
+  {
+    "id": "take",
+    "name": "take",
+    "category": "Filtering Operators",
+    "kind": "pipeable",
+    "status": "current",
+    "signature": "take(count: number): A* => A*",
+    "behavior": "Forward up to count source values, then complete and unsubscribe from the source.",
+    "details": [
+      "A positive count is an upper bound, not a promise that the source will supply that many values.",
+      "Early source completion is forwarded without an empty-source error.",
+      "For count zero or below, the result completes immediately without subscribing to the source."
+    ],
+    "example": "of(1, 2, 3).pipe(take(2)) // next: 1, 2; complete",
+    "overloads": "The teaching form assumes an integer count. take(1) permits zero values; first() instead errors if its source completes empty.",
+    "related": ["first", "takeUntil", "takeWhile", "skip"],
+    "source": "internal/operators/take.ts",
+    "doc": "https://rxjs.dev/api/operators/take",
+    "import": "rxjs"
+  },
+  {
+    "id": "takeLast",
+    "name": "takeLast",
+    "category": "Filtering Operators",
+    "kind": "pipeable",
+    "status": "current",
+    "signature": "takeLast(count: number): A* => A*",
+    "behavior": "Remember up to count recent values and emit them in their original order when the source completes.",
+    "details": [
+      "For a positive count, no values are emitted before normal source completion.",
+      "If the source supplies fewer than count values and completes, all its values are emitted; an empty source completes without error.",
+      "A source error or downstream unsubscription discards the buffered values.",
+      "For count zero or below, the result completes immediately without subscribing to the source."
+    ],
+    "example": "of(1, 2, 3, 4).pipe(takeLast(2)) // next: 3, 4 at source completion; complete",
+    "overloads": "The teaching form assumes an integer count. The buffer retains at most count values for a positive integer count.",
+    "related": ["last", "skipLast", "toArray", "take"],
+    "source": "internal/operators/takeLast.ts",
+    "doc": "https://rxjs.dev/api/operators/takeLast",
+    "import": "rxjs"
+  },
+  {
+    "id": "takeUntil",
+    "name": "takeUntil",
+    "category": "Filtering Operators",
+    "kind": "pipeable",
+    "status": "current",
+    "signature": "takeUntil(notifier: unknown*): A* => A*",
+    "behavior": "Forward source values until the notifier sends a next notification. That notification completes the result and tears down both subscriptions.",
+    "details": [
+      "The notifier is subscribed first. A synchronous notifier next prevents the source from being subscribed at all.",
+      "Notifier completion without next does not stop the source.",
+      "Source completion also completes the result; a source or notifier error terminates it with that error."
+    ],
+    "example": "of(1, 2, 3).pipe(takeUntil(EMPTY)) // next: 1, 2, 3; complete; notifier completion does not stop values",
+    "overloads": "The notifier also accepts other ObservableInput values; its payload is ignored.",
+    "related": ["skipUntil", "take", "takeWhile", "endWith"],
+    "source": "internal/operators/takeUntil.ts",
+    "doc": "https://rxjs.dev/api/operators/takeUntil",
+    "import": "rxjs"
+  },
+  {
+    "id": "takeWhile",
+    "name": "takeWhile",
+    "category": "Filtering Operators",
+    "kind": "pipeable",
+    "status": "current",
+    "signature": "takeWhile(predicate: A => boolean, inclusive?: boolean): A* => A*",
+    "behavior": "Forward the initial run of values that satisfy the predicate. Complete at the first false result, optionally including that boundary value.",
+    "details": [
+      "inclusive defaults to false; true emits the first failing value before completion.",
+      "After the first failure, the source is unsubscribed and no later values are tested.",
+      "If the source completes while all tested values pass, completion is forwarded normally."
+    ],
+    "example": "of(1, 2, 3, 1).pipe(takeWhile(n => n < 3)) // next: 1, 2; complete when 3 arrives",
+    "overloads": "The predicate also receives a zero-based index. Type-guard and Boolean overloads can narrow the result when inclusive is false or omitted; including the failing boundary generally preserves A.",
+    "related": ["skipWhile", "filter", "takeUntil", "take"],
+    "source": "internal/operators/takeWhile.ts",
+    "doc": "https://rxjs.dev/api/operators/takeWhile",
+    "import": "rxjs"
+  },
+  {
+    "id": "throttle",
+    "name": "throttle",
+    "category": "Filtering Operators",
+    "kind": "pipeable",
+    "status": "current",
+    "signature": "throttle(durationSelector: A => unknown*, config?: ThrottleConfig): A* => A*",
+    "behavior": "Use a duration to limit which values pass during a burst. By default, emit a leading value immediately and suppress further values while its duration is active.",
+    "details": [
+      "Defaults are leading: true and trailing: false. With trailing enabled, remember the latest suppressed value for release on a duration next.",
+      "A duration next ends the current gate. A trailing emission starts a new duration while the source is still active.",
+      "Duration completion without next ends the gate without a trailing emission.",
+      "Source completion waits only if a trailing value is pending behind an active duration; its next releases that value, while completion without next discards it."
+    ],
+    "example": "of(1, 2, 3).pipe(throttle(() => timer(10))) // next: 1; complete",
+    "overloads": "ThrottleConfig has optional leading and trailing booleans. The duration selector also accepts other ObservableInput values; their payloads are ignored.",
+    "related": ["throttleTime", "audit", "debounce"],
+    "source": "internal/operators/throttle.ts",
+    "doc": "https://rxjs.dev/api/operators/throttle",
+    "import": "rxjs"
+  },
+  {
+    "id": "throttleTime",
+    "name": "throttleTime",
+    "category": "Filtering Operators",
+    "kind": "pipeable",
+    "status": "current",
+    "signature": "throttleTime(duration: number, scheduler?: SchedulerLike, config?: ThrottleConfig): A* => A*",
+    "behavior": "By default, emit a value immediately and suppress new values for a fixed duration. Leading and trailing options choose which ends of each interval may emit.",
+    "details": [
+      "Defaults are leading: true and trailing: false. trailing: true can emit the latest value held during the interval.",
+      "Suppressed source values do not restart the running interval. A trailing emission can start the next interval while the source remains active.",
+      "If source completion leaves a trailing value pending, the result waits for the timer to release it; the default configuration completes immediately.",
+      "The scheduler defaults to asyncScheduler, with time units normally in milliseconds. Errors and downstream unsubscription discard pending values."
+    ],
+    "example": "of(1, 2, 3).pipe(throttleTime(10)) // next: 1; complete",
+    "overloads": "Equivalent to throttle(() => timer(duration, scheduler), config). ThrottleConfig contains optional leading and trailing booleans.",
+    "related": ["throttle", "auditTime", "debounceTime", "sampleTime"],
+    "source": "internal/operators/throttleTime.ts",
+    "doc": "https://rxjs.dev/api/operators/throttleTime",
+    "import": "rxjs"
+  },
+  {
+    "id": "combineLatestAll",
+    "name": "combineLatestAll",
+    "category": "Join Operators",
+    "kind": "pipeable",
+    "status": "current",
+    "signature": "combineLatestAll(): (A*)* => (A[])*",
+    "behavior": "Collect the inner sources until the outer source completes, then combine those sources by their latest values.",
+    "details": [
+      "No inner source is subscribed before outer completion; a never-completing outer prevents all inner subscriptions.",
+      "After collection, every inner must provide a first value. Later inner values emit a new array in collected-source order.",
+      "A completed inner's latest value remains usable; normal result completion waits for all collected inners to complete.",
+      "An empty outer completes without a next value. Hot inner values emitted before the delayed inner subscriptions are not recovered."
+    ],
+    "example": "of(of(1, 2), of(10, 20)).pipe(combineLatestAll()) // next: [2, 10], [2, 20]; complete",
+    "overloads": "The selected form uses homogeneous Observable<A> inners and produces array values. Native inputs may be other ObservableInput values, and an optional projection can produce B* instead of (A[])*.",
+    "related": ["combineLatest", "combineLatestWith", "zipAll", "mergeAll"],
+    "source": "internal/operators/combineLatestAll.ts",
+    "doc": "https://rxjs.dev/api/operators/combineLatestAll",
+    "import": "rxjs"
+  },
+  {
+    "id": "concatAll",
+    "name": "concatAll",
+    "category": "Join Operators",
+    "kind": "pipeable",
+    "status": "current",
+    "signature": "concatAll(): (A*)* => A*",
+    "behavior": "Subscribe to one inner source at a time. Queue later inner sources and start the next only when the current inner completes.",
+    "details": [
+      "The first inner can start before the outer completes; output follows inner subscription order.",
+      "Outer completion waits for the active inner and queued inners to finish. A nonterminating inner blocks the queue.",
+      "The queue stores inner sources, not events missed before their subscriptions; hot inner values can be lost while waiting.",
+      "A fast outer can grow the queue without bound. Errors terminate the result and discard queued work."
+    ],
+    "example": "of(of(1, 2).pipe(delay(10)), of(3)).pipe(concatAll()) // next: 1, 2, 3; complete",
+    "overloads": "Equivalent to mergeAll(1). Native inner inputs may also be other ObservableInput values.",
+    "related": ["concatMap", "mergeAll", "switchAll", "exhaustAll"],
+    "source": "internal/operators/concatAll.ts",
+    "doc": "https://rxjs.dev/api/operators/concatAll",
+    "import": "rxjs"
+  },
+  {
+    "id": "exhaustAll",
+    "name": "exhaustAll",
+    "category": "Join Operators",
+    "kind": "pipeable",
+    "status": "current",
+    "signature": "exhaustAll(): (A*)* => A*",
+    "behavior": "Subscribe to an inner source only when no inner is active. Ignore new inner sources while the current one is running.",
+    "details": [
+      "Ignored inner sources are neither subscribed nor queued for later.",
+      "When the active inner completes, the next outer value can supply a new inner.",
+      "Outer completion waits for the active inner. A nonterminating active inner keeps the result open."
+    ],
+    "example": "of(of(1, 2).pipe(delay(10)), of(3)).pipe(exhaustAll()) // next: 1, 2; complete; of(3) is ignored",
+    "overloads": "Native inner inputs may also be other ObservableInput values. exhaust is the deprecated earlier name.",
+    "related": ["exhaustMap", "exhaust", "concatAll", "switchAll"],
+    "source": "internal/operators/exhaustAll.ts",
+    "doc": "https://rxjs.dev/api/operators/exhaustAll",
+    "import": "rxjs"
+  },
+  {
+    "id": "mergeAll",
+    "name": "mergeAll",
+    "category": "Join Operators",
+    "kind": "pipeable",
+    "status": "current",
+    "signature": "mergeAll(concurrent?: number): (A*)* => A*",
+    "behavior": "Subscribe to inner sources as they arrive, up to the concurrency limit, and forward values from all active inners.",
+    "details": [
+      "concurrent defaults to Infinity. A positive limit queues additional inner sources until an active inner completes.",
+      "Values follow actual arrival order across active inners; earlier outer positions do not reserve earlier output positions.",
+      "Outer completion waits for all active and queued inners to finish.",
+      "The limit bounds active subscriptions, not queue length. Errors cancel active inners and discard queued work."
+    ],
+    "example": "of(of(1, 2).pipe(delay(10)), of(3)).pipe(mergeAll()) // next: 3, 1, 2; complete",
+    "overloads": "Use a positive integer limit or Infinity. Native inner inputs may also be other ObservableInput values; mergeAll(1) has concatAll's policy.",
+    "related": ["mergeMap", "concatAll", "switchAll", "exhaustAll"],
+    "source": "internal/operators/mergeAll.ts",
+    "doc": "https://rxjs.dev/api/operators/mergeAll",
+    "import": "rxjs"
+  },
+  {
+    "id": "switchAll",
+    "name": "switchAll",
+    "category": "Join Operators",
+    "kind": "pipeable",
+    "status": "current",
+    "signature": "switchAll(): (A*)* => A*",
+    "behavior": "Follow only the latest inner source. Each new inner replaces the previous inner subscription immediately.",
+    "details": [
+      "The previous inner is unsubscribed before its replacement is subscribed; already emitted values remain part of the output history.",
+      "Outer completion waits for the current inner to complete; it does not cancel that final inner.",
+      "Stopping underlying external work depends on the inner source's teardown implementation."
+    ],
+    "example": "of(of(1, 2).pipe(delay(10)), of(3)).pipe(switchAll()) // next: 3; complete; the delayed inner is unsubscribed",
+    "overloads": "Equivalent to switchMap(inner => inner). Native inner inputs may also be other ObservableInput values.",
+    "related": ["switchMap", "mergeAll", "concatAll", "exhaustAll"],
+    "source": "internal/operators/switchAll.ts",
+    "doc": "https://rxjs.dev/api/operators/switchAll",
+    "import": "rxjs"
+  },
+  {
+    "id": "startWith",
+    "name": "startWith",
+    "category": "Join Operators",
+    "kind": "pipeable",
+    "status": "current",
+    "signature": "startWith(...values: B[]): A* => (A | B)*",
+    "behavior": "On subscription, emit the supplied values in order, then subscribe to the source and forward its values.",
+    "details": [
+      "In the selected form, the supplied values are emitted synchronously before the source subscription starts.",
+      "If downstream closes while receiving those initial values, the source need not be subscribed.",
+      "Argument expressions are evaluated when constructing the operator. Use defer when a starting value must be computed anew per subscription."
+    ],
+    "example": "of(2, 3).pipe(startWith(0, 1)) // next: 0, 1, 2, 3; complete",
+    "overloads": "The variadic native form preserves unions of heterogeneous initial values, including null and undefined. Only the scheduler-argument overload is deprecated; startWith itself is current.",
+    "related": ["endWith", "concatWith", "scan", "defer"],
+    "source": "internal/operators/startWith.ts",
+    "doc": "https://rxjs.dev/api/operators/startWith",
+    "import": "rxjs"
+  },
+  {
+    "id": "withLatestFrom",
+    "name": "withLatestFrom",
+    "category": "Join Operators",
+    "kind": "pipeable",
+    "status": "current",
+    "signature": "withLatestFrom(other: B*): A* => [A, B]*",
+    "behavior": "When the primary source emits A, pair it with the latest B from the companion. Companion values update the remembered B without triggering output.",
+    "details": [
+      "Every companion must have emitted once before a primary value can produce a tuple; early primary values are discarded.",
+      "Companions are subscribed before the primary source. A synchronous companion can establish its latest value during setup.",
+      "Companion completion does not complete the result. A completed companion's last value remains available; a companion that completes empty never establishes readiness.",
+      "Primary completion completes the result and unsubscribes companions; an error from any subscribed input terminates it."
+    ],
+    "example": "of(1, 2).pipe(withLatestFrom(of('a', 'b'))) // next: [1, 'b'], [2, 'b']; complete",
+    "overloads": "The selected form has one Observable companion. Native forms accept multiple ObservableInput companions and an optional projection; output tuples keep the primary value first.",
+    "related": ["combineLatestWith", "sample", "zipWith"],
+    "source": "internal/operators/withLatestFrom.ts",
+    "doc": "https://rxjs.dev/api/operators/withLatestFrom",
+    "import": "rxjs"
+  },
+  {
+    "id": "combineAll",
+    "name": "combineAll",
+    "category": "Join Operators",
+    "kind": "pipeable",
+    "status": "deprecated",
+    "replacement": "combineLatestAll",
+    "signature": "combineAll(): (A*)* => (A[])*",
+    "behavior": "Collect inner sources until outer completion, then emit arrays of their latest values. This is the older name for combineLatestAll.",
+    "details": [
+      "Inner subscriptions begin only after the outer completes.",
+      "Each collected inner must emit before any combined array can be emitted; later arrays retain collected-source order.",
+      "Normal completion waits for all collected inner sources; an empty outer completes without emitting."
+    ],
+    "example": "of(of(1, 2), of(10, 20)).pipe(combineAll()) // next: [2, 10], [2, 20]; complete",
+    "overloads": "The function is a direct alias of combineLatestAll, including its ObservableInput and projection overloads.",
+    "related": ["combineLatestAll", "combineLatest"],
+    "source": "internal/operators/combineAll.ts",
+    "doc": "https://rxjs.dev/api/operators/combineAll",
+    "import": "rxjs"
+  },
+  {
+    "id": "combineLatestWith",
+    "name": "combineLatestWith",
+    "category": "Join Operators",
+    "kind": "pipeable",
+    "status": "current",
+    "signature": "combineLatestWith(other: B*): A* => [A, B]*",
+    "behavior": "After both inputs have supplied a value, any new value from either input emits a tuple containing their latest values.",
+    "details": [
+      "The primary source is subscribed first, followed by companions in argument order; synchronous inputs can finish during setup.",
+      "A completed input's last value remains usable. Normal result completion waits for all inputs to complete.",
+      "In RxJS 7.8.2, an input that completes empty prevents tuples but does not itself force immediate result completion; another input can keep the result open.",
+      "A source error terminates the result and unsubscribes the other inputs."
+    ],
+    "example": "of(1, 2).pipe(combineLatestWith(of('a', 'b'))) // next: [2, 'a'], [2, 'b']; complete",
+    "overloads": "The native variadic form accepts several ObservableInput companions and produces [A, B, C, ...]* in source order.",
+    "related": ["combineLatest", "withLatestFrom", "zipWith", "combineLatest-operator"],
+    "source": "internal/operators/combineLatestWith.ts",
+    "doc": "https://rxjs.dev/api/operators/combineLatestWith",
+    "import": "rxjs"
+  },
+  {
+    "id": "concatWith",
+    "name": "concatWith",
+    "category": "Join Operators",
+    "kind": "pipeable",
+    "status": "current",
+    "signature": "concatWith(other: B*): A* => (A | B)*",
+    "behavior": "Forward the primary source, then subscribe to the companion after the primary completes and forward the companion.",
+    "details": [
+      "With multiple companions, subscriptions proceed in argument order, one at a time.",
+      "A source that never completes blocks later subscriptions; an error ends the sequence without moving on.",
+      "Values from a hot companion before its turn are not buffered by concatWith."
+    ],
+    "example": "of(1, 2).pipe(concatWith(of('a', 'b'))) // next: 1, 2, 'a', 'b'; complete",
+    "overloads": "The native form accepts multiple ObservableInput companions. The output payload is the union of their value types and the primary source's value type.",
+    "related": ["concat", "concatAll", "mergeWith", "concat-operator"],
+    "source": "internal/operators/concatWith.ts",
+    "doc": "https://rxjs.dev/api/operators/concatWith",
+    "import": "rxjs"
+  },
+  {
+    "id": "mergeWith",
+    "name": "mergeWith",
+    "category": "Join Operators",
+    "kind": "pipeable",
+    "status": "current",
+    "signature": "mergeWith(other: B*): A* => (A | B)*",
+    "behavior": "Subscribe to the primary and companion sources and forward each input's values as they arrive.",
+    "details": [
+      "Subscriptions start in primary-then-companion order, so a synchronous input can emit during setup before later inputs are subscribed.",
+      "Normal completion waits for every input to complete.",
+      "An error from any input terminates the result and unsubscribes the others."
+    ],
+    "example": "of(1, 2).pipe(delay(10), mergeWith(of('a'))) // next: 'a', 1, 2; complete",
+    "overloads": "The native form accepts multiple ObservableInput companions. For an explicit concurrency limit, use an appropriate merge creation form or a higher-order source with mergeAll(limit).",
+    "related": ["merge", "mergeAll", "concatWith", "merge-operator"],
+    "source": "internal/operators/mergeWith.ts",
+    "doc": "https://rxjs.dev/api/operators/mergeWith",
+    "import": "rxjs"
+  },
+  {
+    "id": "raceWith",
+    "name": "raceWith",
+    "category": "Join Operators",
+    "kind": "pipeable",
+    "status": "current",
+    "signature": "raceWith(other: B*): A* => (A | B)*",
+    "behavior": "Let the first input notification decide the result. A first next selects that source for the remaining output; a first complete or error ends the result immediately.",
+    "details": [
+      "Once a source wins with a next value, other subscribed inputs are unsubscribed.",
+      "Inputs are subscribed in primary-then-companion order. A synchronous winner can prevent later inputs from being subscribed at all.",
+      "An empty source can win by completing before any competing value arrives."
+    ],
+    "example": "of(1, 2).pipe(raceWith(of('later'))) // next: 1, 2; complete; the companion is never subscribed",
+    "overloads": "The native form accepts multiple ObservableInput companions. With no companions, raceWith() returns the primary source unchanged.",
+    "related": ["race", "mergeWith", "race-operator"],
+    "source": "internal/operators/raceWith.ts",
+    "doc": "https://rxjs.dev/api/operators/raceWith",
+    "import": "rxjs"
+  },
+  {
+    "id": "zipWith",
+    "name": "zipWith",
+    "category": "Join Operators",
+    "kind": "pipeable",
+    "status": "current",
+    "signature": "zipWith(other: B*): A* => [A, B]*",
+    "behavior": "Pair the first value from each input, then the second from each, and so on. Emit a tuple whenever every input has its next unpaired value available.",
+    "details": [
+      "Values from faster inputs wait in queues; these queues can grow when arrival rates differ.",
+      "A completed input can still contribute values already queued.",
+      "The result completes as soon as a completed input has no queued value left, because another full tuple is impossible. An input that completes empty can therefore end the result immediately."
+    ],
+    "example": "of(1, 2, 3).pipe(zipWith(of('a', 'b'))) // next: [1, 'a'], [2, 'b']; complete",
+    "overloads": "The native variadic form accepts multiple ObservableInput companions and emits tuples in primary-then-companion order.",
+    "related": ["zip", "zipAll", "combineLatestWith", "zip-operator"],
+    "source": "internal/operators/zipWith.ts",
+    "doc": "https://rxjs.dev/api/operators/zipWith",
+    "import": "rxjs"
+  },
+  {
+    "id": "zipAll",
+    "name": "zipAll",
+    "category": "Join Operators",
+    "kind": "pipeable",
+    "status": "current",
+    "signature": "zipAll(): (A*)* => (A[])*",
+    "behavior": "Collect inner sources until the outer completes, then combine their first values, second values, and later matching positions into arrays.",
+    "details": [
+      "No inner is subscribed before outer completion; a nonterminating outer prevents the join from starting.",
+      "Array positions follow the order in which inner sources were collected, while each inner's unpaired values wait in a queue.",
+      "The result completes when any completed inner has no queued value left. An empty outer completes without a next value.",
+      "Hot inner values sent before the eventual subscriptions are missed, and faster subscribed inners can grow their queues."
+    ],
+    "example": "of(of(1, 2), of(10, 20, 30)).pipe(zipAll()) // next: [1, 10], [2, 20]; complete",
+    "overloads": "The selected form uses homogeneous Observable<A> inners. Native inputs may be other ObservableInput values; an optional projection changes the output from (A[])* to B*.",
+    "related": ["zip", "zipWith", "combineLatestAll"],
+    "source": "internal/operators/zipAll.ts",
+    "doc": "https://rxjs.dev/api/operators/zipAll",
+    "import": "rxjs"
+  },
+  {
+    "id": "endWith",
+    "name": "endWith",
+    "category": "Join Operators",
+    "kind": "pipeable",
+    "status": "current",
+    "signature": "endWith(...values: B[]): A* => (A | B)*",
+    "behavior": "Forward the source, then emit the supplied values in order after normal source completion and complete the result.",
+    "details": [
+      "In the selected form, the appended values are emitted synchronously when source completion is received.",
+      "A source error or downstream unsubscription does not emit the appended values.",
+      "A source that never completes never reaches the appended values."
+    ],
+    "example": "of(1, 2).pipe(endWith('done')) // next: 1, 2, 'done'; complete",
+    "overloads": "The native variadic form preserves unions of heterogeneous appended values. The scheduler-argument behavior is deprecated; endWith itself is current.",
+    "related": ["startWith", "concatWith", "finalize", "takeUntil"],
+    "source": "internal/operators/endWith.ts",
+    "doc": "https://rxjs.dev/api/operators/endWith",
+    "import": "rxjs"
+  },
+  {
+    "id": "combineLatest-operator",
+    "name": "combineLatest",
+    "category": "Join Operators",
+    "kind": "pipeable",
+    "status": "deprecated",
+    "replacement": "combineLatestWith",
+    "signature": "combineLatest(other: B*): A* => [A, B]*",
+    "behavior": "Combine the primary source with companions so every input update emits their latest-value tuple once all inputs have emitted.",
+    "details": [
+      "This is the legacy pipeable import from rxjs/operators; the creation function exported by rxjs is a separate API.",
+      "Completed inputs retain their latest values; normal completion waits for all inputs. An empty-completing input prevents readiness without forcing immediate completion in RxJS 7.8.2.",
+      "The primary source is subscribed before its companions, which affects synchronous examples."
+    ],
+    "example": "import { combineLatest as combineLatestOperator } from 'rxjs/operators';\nof(1, 2).pipe(combineLatestOperator(of('a', 'b'))) // next: [2, 'a'], [2, 'b']; complete",
+    "overloads": "Legacy forms accept an array or separate ObservableInput companions and an optional projection. Prefer combineLatestWith followed by map for a projected result.",
+    "related": ["combineLatestWith", "combineLatest", "withLatestFrom"],
+    "source": "internal/operators/combineLatest.ts",
+    "doc": "https://rxjs.dev/api/operators/combineLatest",
+    "import": "rxjs/operators"
+  },
+  {
+    "id": "concat-operator",
+    "name": "concat",
+    "category": "Join Operators",
+    "kind": "pipeable",
+    "status": "deprecated",
+    "replacement": "concatWith",
+    "signature": "concat(other: B*): A* => (A | B)*",
+    "behavior": "Forward the primary source, then subscribe to each supplied companion in order after the previous source completes.",
+    "details": [
+      "This is the legacy pipeable import from rxjs/operators, distinct from the concat creation function.",
+      "A nonterminating input blocks later subscriptions; an error ends the sequence.",
+      "Hot companion values sent before the companion's turn are not retained."
+    ],
+    "example": "import { concat as concatOperator } from 'rxjs/operators';\nof(1, 2).pipe(concatOperator(of('a'))) // next: 1, 2, 'a'; complete",
+    "overloads": "Legacy forms accept multiple ObservableInput companions and an optional final scheduler. Use concatWith for the selected unscheduled form.",
+    "related": ["concatWith", "concat", "concatAll"],
+    "source": "internal/operators/concat.ts",
+    "doc": "https://rxjs.dev/api/operators/concat",
+    "import": "rxjs/operators"
+  },
+  {
+    "id": "merge-operator",
+    "name": "merge",
+    "category": "Join Operators",
+    "kind": "pipeable",
+    "status": "deprecated",
+    "replacement": "mergeWith for the common unlimited-concurrency form; use merge or mergeAll for an explicit concurrency limit",
+    "signature": "merge(other: B*): A* => (A | B)*",
+    "behavior": "Subscribe to the primary and companion sources and interleave their arriving values into one result.",
+    "details": [
+      "This is the legacy pipeable import from rxjs/operators, distinct from the merge creation function.",
+      "The selected form starts inputs in source order and permits overlapping subscriptions without a concurrency limit.",
+      "Normal completion waits for all inputs; an input error terminates the result and cancels the others."
+    ],
+    "example": "import { merge as mergeOperator } from 'rxjs/operators';\nof(1, 2).pipe(delay(10), mergeOperator(of('a'))) // next: 'a', 1, 2; complete",
+    "overloads": "Legacy forms accept multiple ObservableInput companions, an optional concurrency number, and an optional scheduler. Those extra options are not parameters of mergeWith.",
+    "related": ["mergeWith", "merge", "mergeAll"],
+    "source": "internal/operators/merge.ts",
+    "doc": "https://rxjs.dev/api/operators/merge",
+    "import": "rxjs/operators"
+  },
+  {
+    "id": "race-operator",
+    "name": "race",
+    "category": "Join Operators",
+    "kind": "pipeable",
+    "status": "deprecated",
+    "replacement": "raceWith",
+    "signature": "race(other: B*): A* => (A | B)*",
+    "behavior": "Race the primary and companion sources: the first next chooses a source to follow, while a first complete or error ends the result immediately.",
+    "details": [
+      "This is the legacy pipeable import from rxjs/operators, distinct from the race creation function.",
+      "Losing subscriptions are closed; a synchronous winner can prevent later inputs from being subscribed.",
+      "An empty input can end the race before any value is emitted."
+    ],
+    "example": "import { race as raceOperator } from 'rxjs/operators';\nof(1, 2).pipe(raceOperator(of('later'))) // next: 1, 2; complete",
+    "overloads": "Legacy forms accept an array or separate ObservableInput companions. The implementation delegates to raceWith.",
+    "related": ["raceWith", "race", "mergeWith"],
+    "source": "internal/operators/race.ts",
+    "doc": "https://rxjs.dev/api/operators/race",
+    "import": "rxjs/operators"
+  },
+  {
+    "id": "zip-operator",
+    "name": "zip",
+    "category": "Join Operators",
+    "kind": "pipeable",
+    "status": "deprecated",
+    "replacement": "zipWith",
+    "signature": "zip(other: B*): A* => [A, B]*",
+    "behavior": "Combine equally numbered values from the primary and companion sources into tuples, waiting until every input has its next unpaired value.",
+    "details": [
+      "This is the legacy pipeable import from rxjs/operators, distinct from the zip creation function.",
+      "Faster inputs are queued; completion occurs when a completed input has no queued values left.",
+      "Queue growth depends on differences in input rates, so a slow companion can retain many primary values."
+    ],
+    "example": "import { zip as zipOperator } from 'rxjs/operators';\nof(1, 2, 3).pipe(zipOperator(of('a', 'b'))) // next: [1, 'a'], [2, 'b']; complete",
+    "overloads": "Legacy forms accept multiple ObservableInput companions and optional projection overloads. Prefer zipWith followed by map for a projected result.",
+    "related": ["zipWith", "zip", "zipAll"],
+    "source": "internal/operators/zip.ts",
+    "doc": "https://rxjs.dev/api/operators/zip",
+    "import": "rxjs/operators"
+  }
+]

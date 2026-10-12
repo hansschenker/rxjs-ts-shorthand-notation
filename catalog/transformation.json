@@ -1,0 +1,726 @@
+[
+  {
+    "id": "buffer",
+    "name": "buffer",
+    "category": "Transformation Operators",
+    "kind": "pipeable",
+    "status": "current",
+    "signature": "buffer(closingNotifier: unknown*): A* => (A[])*",
+    "behavior": "Collect source values into an array. Each closing notification emits the current array and starts an empty replacement.",
+    "details": [
+      "A closing next can emit an empty array; closing-notifier completion does not close the buffer or complete the result.",
+      "Source completion emits the remaining array, including an empty one, then completes. Errors and unsubscription discard pending values.",
+      "In RxJS 7.8.2 the source is subscribed before the closing notifier, which matters for synchronous sources."
+    ],
+    "example": "of(1, 2, 3).pipe(buffer(NEVER)) // next: [1, 2, 3]; complete",
+    "overloads": "The closing notifier can be any ObservableInput; the shorthand shows an Observable whose payload is ignored.",
+    "related": [
+      "bufferCount",
+      "bufferTime",
+      "bufferWhen",
+      "window"
+    ],
+    "source": "internal/operators/buffer.ts",
+    "doc": "https://rxjs.dev/api/operators/buffer",
+    "import": "rxjs"
+  },
+  {
+    "id": "bufferCount",
+    "name": "bufferCount",
+    "category": "Transformation Operators",
+    "kind": "pipeable",
+    "status": "current",
+    "signature": "bufferCount(bufferSize: number, startBufferEvery?: number): A* => (A[])*",
+    "behavior": "Collect values into arrays and emit each array when it reaches the chosen size.",
+    "details": [
+      "With positive counts, the default start interval is bufferSize, producing consecutive batches. A smaller interval overlaps buffers; a larger interval leaves gaps.",
+      "Source completion emits all remaining partial buffers, then completes. An empty source produces no arrays.",
+      "Buffers open when a source value arrives. Errors and unsubscription discard unfinished buffers."
+    ],
+    "example": "of(1, 2, 3, 4, 5).pipe(bufferCount(2)) // next: [1, 2], [3, 4], [5]; complete",
+    "overloads": "Passing null for startBufferEvery also selects bufferSize. The teaching form assumes positive buffer and start counts.",
+    "related": [
+      "buffer",
+      "pairwise",
+      "windowCount"
+    ],
+    "source": "internal/operators/bufferCount.ts",
+    "doc": "https://rxjs.dev/api/operators/bufferCount",
+    "import": "rxjs"
+  },
+  {
+    "id": "bufferTime",
+    "name": "bufferTime",
+    "category": "Transformation Operators",
+    "kind": "pipeable",
+    "status": "current",
+    "signature": "bufferTime(timeSpan: number, scheduler?: SchedulerLike): A* => (A[])*",
+    "behavior": "Collect values during each time span and emit the resulting array when that span ends.",
+    "details": [
+      "The first buffer opens on subscription. With the displayed form, each emitted buffer is immediately replaced; even empty buffers are emitted.",
+      "The default clock is asyncScheduler and durations are in milliseconds. The operator schedules boundaries, while source values retain their arrival order within each buffer.",
+      "Source completion flushes every active buffer immediately, then completes; it does not wait for their timers. Errors and unsubscription discard active buffers and cancel their timers.",
+      "The longer forms can create overlapping buffers or gaps, and can close a buffer early at maxBufferSize. Without a creation interval, early closure immediately starts a replacement."
+    ],
+    "example": "of(1, 2, 3).pipe(bufferTime(100)) // next: [1, 2, 3] immediately on source completion; complete",
+    "overloads": "Also accepts (timeSpan, creationInterval, scheduler?) and (timeSpan, creationInterval, maxBufferSize, scheduler?). The creation interval defaults to no separate opening schedule and maxBufferSize to Infinity.",
+    "related": [
+      "buffer",
+      "bufferCount",
+      "windowTime"
+    ],
+    "source": "internal/operators/bufferTime.ts",
+    "doc": "https://rxjs.dev/api/operators/bufferTime",
+    "import": "rxjs"
+  },
+  {
+    "id": "bufferToggle",
+    "name": "bufferToggle",
+    "category": "Transformation Operators",
+    "kind": "pipeable",
+    "status": "current",
+    "signature": "bufferToggle(openings: O*, closingSelector: O => unknown*): A* => (A[])*",
+    "behavior": "Each opening value starts a buffer and selects its closing notifier. That notifier's first next emits the buffer.",
+    "details": [
+      "Several buffers can be open together; a source value is added to all of them. Values arriving while no buffer is open are omitted.",
+      "Closing-notifier completion alone leaves its buffer open. Completion of openings only prevents further openings.",
+      "Source completion emits all still-open buffers, including empty ones, then completes. An error fails the result; unsubscription releases source and notifier subscriptions.",
+      "Openings are subscribed before the source, so a synchronous opening can establish a buffer before a synchronous source starts."
+    ],
+    "example": "of(1, 2, 3).pipe(bufferToggle(of('open'), () => NEVER)) // next: [1, 2, 3]; complete",
+    "overloads": "Both openings and the closing-selector result can be ObservableInput values. The selector receives the opening payload, not a source payload.",
+    "related": [
+      "bufferWhen",
+      "bufferTime",
+      "windowToggle"
+    ],
+    "source": "internal/operators/bufferToggle.ts",
+    "doc": "https://rxjs.dev/api/operators/bufferToggle",
+    "import": "rxjs"
+  },
+  {
+    "id": "bufferWhen",
+    "name": "bufferWhen",
+    "category": "Transformation Operators",
+    "kind": "pipeable",
+    "status": "current",
+    "signature": "bufferWhen(closingSelector: () => unknown*): A* => (A[])*",
+    "behavior": "Open one buffer immediately. Each selected closing next emits that buffer, opens its replacement, and calls the selector again.",
+    "details": [
+      "Only one buffer is active at a time. The closing subscription is replaced after its first next; completion without a next leaves the current buffer open.",
+      "Source completion emits the remaining buffer, including an empty array, then completes. Errors and unsubscription discard it.",
+      "The first closing notifier is subscribed before the source. A selector that repeatedly returns an immediately emitting source can keep reopening buffers synchronously."
+    ],
+    "example": "of(1, 2, 3).pipe(bufferWhen(() => NEVER)) // next: [1, 2, 3]; complete",
+    "overloads": "The closing selector may return any ObservableInput. Unlike windowWhen, closing-notifier completion does not advance the buffer.",
+    "related": [
+      "buffer",
+      "bufferToggle",
+      "windowWhen"
+    ],
+    "source": "internal/operators/bufferWhen.ts",
+    "doc": "https://rxjs.dev/api/operators/bufferWhen",
+    "import": "rxjs"
+  },
+  {
+    "id": "concatMap",
+    "name": "concatMap",
+    "category": "Transformation Operators",
+    "kind": "pipeable",
+    "status": "current",
+    "signature": "concatMap(project: A => B*): A* => B*",
+    "behavior": "Process source values in order, one inner subscription at a time. Wait for the current inner to complete before starting the next.",
+    "details": [
+      "While an inner is active, source values queue. The projector is called when each queued value gets its turn, not when that value first arrives.",
+      "Outer completion waits for the active inner and queued work. An inner that never completes blocks the queue.",
+      "Errors terminate the result and tear down active subscriptions; downstream unsubscription also abandons queued work.",
+      "The queue can grow when arrivals outpace completion. This is mergeMap with concurrency 1, without an added scheduling or sharing policy."
+    ],
+    "example": "of(1, 2).pipe(concatMap(n => of(n, n * 10))) // next: 1, 10, 2, 20; complete",
+    "overloads": "The projector also receives a zero-based processing index and can return any ObservableInput. The legacy resultSelector overload is deprecated; concatMap itself is current.",
+    "related": [
+      "concatAll",
+      "mergeMap",
+      "switchMap",
+      "exhaustMap"
+    ],
+    "source": "internal/operators/concatMap.ts",
+    "doc": "https://rxjs.dev/api/operators/concatMap",
+    "import": "rxjs"
+  },
+  {
+    "id": "concatMapTo",
+    "name": "concatMapTo",
+    "category": "Transformation Operators",
+    "kind": "pipeable",
+    "status": "deprecated",
+    "replacement": "concatMap(() => inner)",
+    "signature": "concatMapTo(inner: B*): A* => B*",
+    "behavior": "For each source value, subscribe to the same supplied inner Observable, waiting for each subscription to complete before starting the next.",
+    "details": [
+      "Source payloads are ignored, but each source next reserves a turn in the queue.",
+      "A cold inner starts its execution again for each subscription; a hot inner exposes whatever values arrive during that subscription.",
+      "Outer completion waits for queued turns and the active inner. Errors or downstream unsubscription terminate the active work and abandon the queue."
+    ],
+    "example": "of('a', 'b').pipe(concatMapTo(of(1, 2))) // next: 1, 2, 1, 2; complete",
+    "overloads": "The supplied inner may be any ObservableInput. The legacy resultSelector form also exists but is deprecated; the entire concatMapTo API is deprecated.",
+    "related": [
+      "concatMap",
+      "mergeMapTo",
+      "switchMapTo"
+    ],
+    "source": "internal/operators/concatMapTo.ts",
+    "doc": "https://rxjs.dev/api/operators/concatMapTo",
+    "import": "rxjs"
+  },
+  {
+    "id": "exhaust",
+    "name": "exhaust",
+    "category": "Transformation Operators",
+    "kind": "pipeable",
+    "status": "deprecated",
+    "replacement": "exhaustAll()",
+    "signature": "exhaust(): (A*)* => A*",
+    "behavior": "Subscribe to an arriving inner only while idle. Ignore arriving inners until the current one completes.",
+    "details": [
+      "This is the deprecated name of exhaustAll, with identical behavior.",
+      "Ignored inners are neither subscribed nor queued. A synchronous inner can complete before the outer emits the next inner, allowing both to run.",
+      "Outer completion waits for the accepted inner to complete. Errors and downstream unsubscription tear down active work."
+    ],
+    "example": "of(timer(10), of(99)).pipe(exhaust()) // next: 0 after the timer; complete; of(99) is ignored",
+    "overloads": "The outer can emit any ObservableInput; the shorthand shows an Observable of Observables.",
+    "related": [
+      "exhaustAll",
+      "exhaustMap",
+      "switchAll"
+    ],
+    "source": "internal/operators/exhaust.ts",
+    "doc": "https://rxjs.dev/api/operators/exhaust",
+    "import": "rxjs"
+  },
+  {
+    "id": "exhaustMap",
+    "name": "exhaustMap",
+    "category": "Transformation Operators",
+    "kind": "pipeable",
+    "status": "current",
+    "signature": "exhaustMap(project: A => B*): A* => B*",
+    "behavior": "While idle, project a source value and subscribe to its inner. Ignore further source values until that inner completes.",
+    "details": [
+      "Ignored values are not queued and do not call the projector. Only accepted values advance the projector's index.",
+      "A never-completing inner keeps the operator busy indefinitely. A synchronous inner may finish before the next source value arrives.",
+      "Outer completion waits for the active inner. Source, projection, or inner errors fail the result; downstream unsubscription tears down active work."
+    ],
+    "example": "of(1, 2, 3).pipe(exhaustMap(n => of(n).pipe(delay(10)))) // next: 1; complete; 2 and 3 are ignored while busy",
+    "overloads": "The projector also receives a zero-based accepted-value index and may return any ObservableInput. Only the legacy resultSelector overload is deprecated.",
+    "related": [
+      "exhaustAll",
+      "concatMap",
+      "mergeMap",
+      "switchMap"
+    ],
+    "source": "internal/operators/exhaustMap.ts",
+    "doc": "https://rxjs.dev/api/operators/exhaustMap",
+    "import": "rxjs"
+  },
+  {
+    "id": "expand",
+    "name": "expand",
+    "category": "Transformation Operators",
+    "kind": "pipeable",
+    "status": "current",
+    "signature": "expand(project: A => A*, concurrent?: number): A* => A*",
+    "behavior": "Emit each source value and recursively project every value reached. Values produced by inner streams become further inputs to the same projection.",
+    "details": [
+      "The starting source values are included in the output. Returning EMPTY ends that branch without removing the value that led to it.",
+      "The default concurrency is Infinity. A finite positive limit queues values until an inner subscription slot becomes available; projection and output order depend on that limit and inner timing.",
+      "Completion requires the source, all recursive inner work, and the queue to finish. Errors or downstream unsubscription tear down active subscriptions.",
+      "There is no built-in visited set or cycle detection. A projection that keeps producing values can continue indefinitely."
+    ],
+    "example": "of(1).pipe(expand(n => n < 4 ? of(n + 1) : EMPTY)) // next: 1, 2, 3, 4; complete",
+    "overloads": "Shows recursion within one payload type A. The projector also receives an index and may return ObservableInput. The legacy scheduler argument is deprecated; schedule inner subscriptions with subscribeOn when needed.",
+    "related": [
+      "mergeMap",
+      "mergeScan",
+      "take"
+    ],
+    "source": "internal/operators/expand.ts",
+    "doc": "https://rxjs.dev/api/operators/expand",
+    "import": "rxjs"
+  },
+  {
+    "id": "groupBy",
+    "name": "groupBy",
+    "category": "Transformation Operators",
+    "kind": "pipeable",
+    "status": "current",
+    "signature": "groupBy(key: A => K): A* => (A* & { readonly key: K })*",
+    "behavior": "Route each value into the stream for its key. Emit a new keyed stream when that key first appears, then send matching values through that stream.",
+    "details": [
+      "A group is a GroupedObservable: an Observable with a key property. Default groups use Subjects, are hot, and do not replay missed values; subscribe when the group is emitted.",
+      "Without a duration selector, groups remain tracked until the source terminates. A duration next or completion expires that group; a later value with the same key creates a new group.",
+      "Source, key-selector, and element-selector errors reach the outer stream and all groups. A duration-stream error affects its own group; source completion completes all current groups and the outer stream.",
+      "Subscribed groups can keep the source subscription alive after the outer group stream is unsubscribed. Teardown waits for the remaining group subscriptions to end."
+    ],
+    "example": "of(1, 2, 3, 4).pipe(groupBy(n => n % 2), mergeMap(group => group.pipe(toArray(), map(values => ({ key: group.key, values }))))) // next: { key: 1, values: [1, 3] }, { key: 0, values: [2, 4] }; complete",
+    "overloads": "The options form can select element payloads, group duration, and a custom connector. With element: A => B, the result is (B* & { readonly key: K })*. A type-guard key has narrowing overloads. Legacy positional element/duration/connector overloads are deprecated; groupBy itself is current.",
+    "related": [
+      "partition",
+      "window",
+      "mergeMap"
+    ],
+    "source": "internal/operators/groupBy.ts",
+    "doc": "https://rxjs.dev/api/operators/groupBy",
+    "import": "rxjs"
+  },
+  {
+    "id": "map",
+    "name": "map",
+    "category": "Transformation Operators",
+    "kind": "pipeable",
+    "status": "current",
+    "signature": "map(project: A => B): A* => B*",
+    "behavior": "Apply the projection to each source value and emit its returned value.",
+    "details": [
+      "Projection runs during each source next; map adds no scheduling step.",
+      "If the projection returns an Observable, that Observable is the payload. It is not automatically subscribed or flattened: the resulting shape is (B*)*.",
+      "A thrown projection error fails the result. Otherwise, source completion and errors pass through."
+    ],
+    "example": "of(1, 2, 3).pipe(map(n => n * 10)) // next: 10, 20, 30; complete",
+    "overloads": "The projector also receives a zero-based source index. The thisArg overload is deprecated; map itself is current.",
+    "related": [
+      "filter",
+      "scan",
+      "switchMap",
+      "mapTo"
+    ],
+    "source": "internal/operators/map.ts",
+    "doc": "https://rxjs.dev/api/operators/map",
+    "import": "rxjs"
+  },
+  {
+    "id": "mapTo",
+    "name": "mapTo",
+    "category": "Transformation Operators",
+    "kind": "pipeable",
+    "status": "deprecated",
+    "replacement": "map(() => value)",
+    "signature": "mapTo(value: B): A* => B*",
+    "behavior": "Replace every source value with the same supplied value.",
+    "details": [
+      "Source next notifications determine when the constant is emitted; source payloads are ignored.",
+      "The supplied value is reused. An object is the same reference on every emission, and an Observable value is emitted without being subscribed.",
+      "An empty source produces no constant value. Source completion and errors pass through."
+    ],
+    "example": "of(1, 2).pipe(mapTo('saved')) // next: 'saved', 'saved'; complete",
+    "overloads": "The public input type is unknown because the source payload is unused.",
+    "related": [
+      "map",
+      "startWith"
+    ],
+    "source": "internal/operators/mapTo.ts",
+    "doc": "https://rxjs.dev/api/operators/mapTo",
+    "import": "rxjs"
+  },
+  {
+    "id": "mergeMap",
+    "name": "mergeMap",
+    "category": "Transformation Operators",
+    "kind": "pipeable",
+    "status": "current",
+    "signature": "mergeMap(project: A => B*, concurrent?: number): A* => B*",
+    "behavior": "Project source values into inner streams and forward their values as they arrive. Several inner subscriptions may be active together.",
+    "details": [
+      "Concurrency defaults to Infinity. With a finite positive limit, excess source values queue and the projector is called only when a subscription slot opens.",
+      "Output follows inner emission order, which can differ from source order. With concurrency 1, the processing policy is concatMap.",
+      "Outer completion waits for active inners and queued work. Errors fail the result and tear down active subscriptions; downstream unsubscription also abandons queued values.",
+      "A concurrency limit bounds active inners, not the queue. Queued source values can accumulate when arrivals outpace inner completion."
+    ],
+    "example": "of(1, 2).pipe(mergeMap(n => of(n).pipe(delay(n === 1 ? 20 : 10)))) // next: 2, 1 with these delays; complete",
+    "overloads": "The projector also receives a zero-based processing index and may return any ObservableInput. The legacy resultSelector overload is deprecated; mergeMap itself is current.",
+    "related": [
+      "mergeAll",
+      "concatMap",
+      "switchMap",
+      "exhaustMap"
+    ],
+    "source": "internal/operators/mergeMap.ts",
+    "doc": "https://rxjs.dev/api/operators/mergeMap",
+    "import": "rxjs"
+  },
+  {
+    "id": "mergeMapTo",
+    "name": "mergeMapTo",
+    "category": "Transformation Operators",
+    "kind": "pipeable",
+    "status": "deprecated",
+    "replacement": "mergeMap(() => inner, concurrent)",
+    "signature": "mergeMapTo(inner: B*, concurrent?: number): A* => B*",
+    "behavior": "For each source value, subscribe to the same supplied inner and merge the values from those subscriptions.",
+    "details": [
+      "Source payloads are ignored. Concurrency defaults to Infinity; a finite positive limit queues source triggers until a slot is available.",
+      "Each trigger creates another subscription. A cold inner can repeat its work, while multiple subscriptions to a hot inner can forward the same event more than once.",
+      "Outer completion waits for active and queued subscriptions. Errors or downstream unsubscription end active work and abandon the queue."
+    ],
+    "example": "of('a', 'b').pipe(mergeMapTo(of(1, 2))) // next: 1, 2, 1, 2; complete",
+    "overloads": "The supplied inner may be any ObservableInput. The legacy resultSelector form is also deprecated.",
+    "related": [
+      "mergeMap",
+      "concatMapTo",
+      "switchMapTo"
+    ],
+    "source": "internal/operators/mergeMapTo.ts",
+    "doc": "https://rxjs.dev/api/operators/mergeMapTo",
+    "import": "rxjs"
+  },
+  {
+    "id": "mergeScan",
+    "name": "mergeScan",
+    "category": "Transformation Operators",
+    "kind": "pipeable",
+    "status": "current",
+    "signature": "mergeScan(accumulator: (S, A) => S*, seed: S, concurrent?: number): A* => S*",
+    "behavior": "Use the current state and an input to start an inner stream of states. Merge all active inners, remembering each emitted state for the next accumulator call.",
+    "details": [
+      "The seed initializes state but is not emitted. The accumulator sees the latest inner value emitted so far, or the seed if no inner has emitted.",
+      "Concurrency defaults to Infinity. Overlapping accumulations can start from the same state, and a later emission from an older inner can replace a newer state.",
+      "With concurrency 1, queued inputs call the accumulator after prior inners complete, using the latest state at that moment. This serializes asynchronous state transitions.",
+      "Outer completion waits for inners and queued work. State belongs to each subscription, but a supplied object seed is not cloned."
+    ],
+    "example": "of(1, 2, 3).pipe(mergeScan((state, n) => of(state + n), 0)) // next: 1, 3, 6; complete",
+    "overloads": "The accumulator also receives a zero-based processing index and may return ObservableInput<S>. There is no unseeded overload.",
+    "related": [
+      "scan",
+      "switchScan",
+      "mergeMap",
+      "expand"
+    ],
+    "source": "internal/operators/mergeScan.ts",
+    "doc": "https://rxjs.dev/api/operators/mergeScan",
+    "import": "rxjs"
+  },
+  {
+    "id": "pairwise",
+    "name": "pairwise",
+    "category": "Transformation Operators",
+    "kind": "pipeable",
+    "status": "current",
+    "signature": "pairwise(): A* => [A, A]*",
+    "behavior": "Starting with the second source value, emit the previous and current values as a tuple.",
+    "details": [
+      "The tuple order is [previous, current]. Adjacent tuples overlap in one value.",
+      "A source with zero or one value emits no pair. There is no final incomplete tuple when the source completes.",
+      "Only the previous value is retained between notifications; each pair is a new array, while its element references are unchanged."
+    ],
+    "example": "of(1, 2, 3).pipe(pairwise()) // next: [1, 2], [2, 3]; complete",
+    "overloads": "",
+    "related": [
+      "bufferCount",
+      "scan"
+    ],
+    "source": "internal/operators/pairwise.ts",
+    "doc": "https://rxjs.dev/api/operators/pairwise",
+    "import": "rxjs"
+  },
+  {
+    "id": "partition-operator",
+    "name": "partition",
+    "category": "Transformation Operators",
+    "kind": "partition",
+    "status": "deprecated",
+    "replacement": "partition(source, predicate) imported from rxjs",
+    "signature": "partition(predicate: A => boolean): A* => [A*, A*]",
+    "behavior": "Return two streams: values that pass the predicate and values that fail it.",
+    "details": [
+      "This legacy rxjs/operators form returns an array of streams, not an Observable emitting arrays. It ends the ordinary Observable pipeline at that point.",
+      "Each branch subscribes to the source separately and runs its own predicate evaluation. A cold source can execute twice when both branches are subscribed.",
+      "Sharing is a separate decision. With a hot source, each branch observes only values available during its own subscription."
+    ],
+    "example": "of(1, 2, 3).pipe(partition(n => n % 2 === 0)) // returns [passing$, failing$]; subscribing yields 2 / 1, 3; each completes",
+    "overloads": "Import this legacy form from rxjs/operators. The predicate also receives a zero-based index and an optional thisArg is supported. Prefer the current static partition from rxjs.",
+    "related": [
+      "partition",
+      "filter",
+      "groupBy",
+      "share"
+    ],
+    "source": "internal/operators/partition.ts",
+    "doc": "https://rxjs.dev/api/operators/partition",
+    "import": "rxjs/operators"
+  },
+  {
+    "id": "pluck",
+    "name": "pluck",
+    "category": "Transformation Operators",
+    "kind": "pipeable",
+    "status": "deprecated",
+    "replacement": "map(value => value?.property), with optional chaining for nested paths",
+    "signature": "pluck(key: K): A* => (A[K])*",
+    "behavior": "Read a property from every source value and emit the selected property value.",
+    "details": [
+      "A nested path walks successive properties. If the path cannot be resolved, the operator emits undefined rather than omitting that input.",
+      "A selected null value is still an emitted value. Getter exceptions fail the result, just as a thrown map projection would.",
+      "Calling pluck with no property names throws when the operator is created."
+    ],
+    "example": "of({ name: 'Ada' }, { name: 'Erik' }).pipe(pluck('name')) // next: 'Ada', 'Erik'; complete",
+    "overloads": "Shows one known key, K extends keyof A, with the indexed property type A[K]. Typed overloads support nested paths; a general string path returns unknown. Real runtime data with missing properties can produce undefined.",
+    "related": [
+      "map"
+    ],
+    "source": "internal/operators/pluck.ts",
+    "doc": "https://rxjs.dev/api/operators/pluck",
+    "import": "rxjs"
+  },
+  {
+    "id": "scan",
+    "name": "scan",
+    "category": "Transformation Operators",
+    "kind": "pipeable",
+    "status": "current",
+    "signature": "scan(reducer: (S, A) => S, seed: S): A* => S*",
+    "behavior": "Update the current state with each source value and emit that updated state.",
+    "details": [
+      "The seed supplies the first state but is not emitted on subscription. An empty source produces no state values.",
+      "Each subscription tracks its own state variable. A supplied object seed is reused by reference, so pure reducers should return the intended next state without mutating shared seed data.",
+      "Reduction runs when each input arrives. A thrown reducer error fails the result; source completion does not emit an extra final state."
+    ],
+    "example": "of(1, 2, 3).pipe(scan((state, n) => state + n, 0)) // next: 1, 3, 6; complete",
+    "overloads": "Shows the seeded form with one state type S. Without a seed, the first source value becomes state and is emitted without calling the reducer. Other overloads distinguish initial and accumulated state types. The reducer also receives the source index; explicitly passing undefined still supplies a seed.",
+    "related": [
+      "reduce",
+      "mergeScan",
+      "switchScan",
+      "startWith"
+    ],
+    "source": "internal/operators/scan.ts",
+    "doc": "https://rxjs.dev/api/operators/scan",
+    "import": "rxjs"
+  },
+  {
+    "id": "switchScan",
+    "name": "switchScan",
+    "category": "Transformation Operators",
+    "kind": "pipeable",
+    "status": "current",
+    "signature": "switchScan(accumulator: (S, A) => S*, seed: S): A* => S*",
+    "behavior": "Use the current state and each input to select an inner stream of states. Replace the previous inner, forwarding and remembering values only from the active one.",
+    "details": [
+      "The seed is not emitted. State is the latest inner value already emitted, so a canceled inner that emitted nothing has not advanced state.",
+      "On each new input, the prior inner is unsubscribed before the new accumulator call. Values already emitted by that inner remain part of the observed history.",
+      "Outer completion waits for the current inner. Errors or downstream unsubscription tear down active work.",
+      "State tracking is per subscription, but the supplied seed object is not cloned. The underlying work stops on cancellation only when the inner's teardown stops it."
+    ],
+    "example": "of(1, 2).pipe(switchScan((state, n) => of(state + n).pipe(delay(10)), 0)) // next: 2; complete; the first inner never emits",
+    "overloads": "Shows one state type S. The accumulator also receives the source index and may return ObservableInput. There is no unseeded overload.",
+    "related": [
+      "scan",
+      "mergeScan",
+      "switchMap"
+    ],
+    "source": "internal/operators/switchScan.ts",
+    "doc": "https://rxjs.dev/api/operators/switchScan",
+    "import": "rxjs"
+  },
+  {
+    "id": "switchMap",
+    "name": "switchMap",
+    "category": "Transformation Operators",
+    "kind": "pipeable",
+    "status": "current",
+    "signature": "switchMap(project: A => B*): A* => B*",
+    "behavior": "For each input, replace the current inner subscription with the projected inner. Forward values from the active inner only.",
+    "details": [
+      "The previous inner is unsubscribed before the next projector call and subscription. Previously emitted values are not undone.",
+      "Outer completion waits for the current inner to complete; an outer next, not outer completion, triggers replacement.",
+      "Unsubscribing stops observing the old inner. Stopping its underlying request, timer, or other work depends on that inner's teardown.",
+      "Inner streams determine emission timing. switchMap adds no sharing, and source, projection, or inner errors fail the result."
+    ],
+    "example": "of(1, 2).pipe(switchMap(n => of(n).pipe(delay(10)))) // next: 2; complete; the first inner is canceled",
+    "overloads": "The projector also receives the source index and may return any ObservableInput. The legacy resultSelector overload is deprecated; switchMap itself is current.",
+    "related": [
+      "switchAll",
+      "map",
+      "concatMap",
+      "mergeMap",
+      "exhaustMap"
+    ],
+    "source": "internal/operators/switchMap.ts",
+    "doc": "https://rxjs.dev/api/operators/switchMap",
+    "import": "rxjs"
+  },
+  {
+    "id": "switchMapTo",
+    "name": "switchMapTo",
+    "category": "Transformation Operators",
+    "kind": "pipeable",
+    "status": "deprecated",
+    "replacement": "switchMap(() => inner)",
+    "signature": "switchMapTo(inner: B*): A* => B*",
+    "behavior": "Each source value cancels the current inner subscription and starts another subscription to the same supplied inner.",
+    "details": [
+      "Source payloads are ignored. A cold inner starts again; a hot inner supplies the events available to its replacement subscription.",
+      "Cancellation does not undo earlier emissions, and stopping underlying work depends on the inner's teardown.",
+      "Outer completion waits for the current inner. Errors or downstream unsubscription terminate active work."
+    ],
+    "example": "of(1, 2).pipe(switchMapTo(timer(10))) // next: 0 from the replacement timer; complete",
+    "overloads": "The supplied inner may be any ObservableInput. The legacy resultSelector form is also deprecated.",
+    "related": [
+      "switchMap",
+      "concatMapTo",
+      "mergeMapTo"
+    ],
+    "source": "internal/operators/switchMapTo.ts",
+    "doc": "https://rxjs.dev/api/operators/switchMapTo",
+    "import": "rxjs"
+  },
+  {
+    "id": "window",
+    "name": "window",
+    "category": "Transformation Operators",
+    "kind": "pipeable",
+    "status": "current",
+    "signature": "window(boundaries: unknown*): A* => (A*)*",
+    "behavior": "Emit a live window stream immediately. Each boundary next completes that window and emits a new one.",
+    "details": [
+      "Windows are hot and do not replay past values. Subscribe to each window when it is emitted, commonly by immediately flattening or processing it.",
+      "Boundary completion alone does not close the window or complete the result. Source completion completes the current window and the outer stream.",
+      "Source or boundary errors error both the current window and the outer stream. Downstream unsubscription tears down the source and boundary subscriptions.",
+      "The initial window is emitted before source subscription; the boundary subscription is established after the source subscription in RxJS 7.8.2."
+    ],
+    "example": "of(1, 2, 3).pipe(window(NEVER), mergeMap(w => w.pipe(toArray()))) // next: [1, 2, 3]; complete",
+    "overloads": "The boundary source may be any ObservableInput. Its next payload is ignored; it supplies window boundaries only.",
+    "related": [
+      "buffer",
+      "windowCount",
+      "windowTime",
+      "windowWhen"
+    ],
+    "source": "internal/operators/window.ts",
+    "doc": "https://rxjs.dev/api/operators/window",
+    "import": "rxjs"
+  },
+  {
+    "id": "windowCount",
+    "name": "windowCount",
+    "category": "Transformation Operators",
+    "kind": "pipeable",
+    "status": "current",
+    "signature": "windowCount(windowSize: number, startWindowEvery?: number): A* => (A*)*",
+    "behavior": "Divide source values into live window streams, completing each window after its chosen number of values.",
+    "details": [
+      "For positive counts, the default start interval equals windowSize. Smaller intervals overlap windows; larger intervals leave values outside any window.",
+      "Windows are hot and need timely subscriptions. Each window is emitted when it opens, before its values arrive.",
+      "RxJS 7.8.2 opens the initial window immediately and eagerly opens each next window after the start interval. An empty source or an exact count boundary can therefore leave an empty window.",
+      "Source completion completes all open windows and the outer stream; source errors error them. Window completion does not wait for consumers to subscribe."
+    ],
+    "example": "of(1, 2, 3, 4).pipe(windowCount(2), mergeMap(w => w.pipe(toArray()))) // next: [1, 2], [3, 4], []; complete",
+    "overloads": "The displayed behavior assumes positive windowSize. An omitted or nonpositive startWindowEvery uses windowSize.",
+    "related": [
+      "bufferCount",
+      "window",
+      "windowTime"
+    ],
+    "source": "internal/operators/windowCount.ts",
+    "doc": "https://rxjs.dev/api/operators/windowCount",
+    "import": "rxjs"
+  },
+  {
+    "id": "windowTime",
+    "name": "windowTime",
+    "category": "Transformation Operators",
+    "kind": "pipeable",
+    "status": "current",
+    "signature": "windowTime(timeSpan: number, scheduler?: SchedulerLike): A* => (A*)*",
+    "behavior": "Emit a live window for each time span. In the displayed form, completing one timed window immediately opens the next.",
+    "details": [
+      "A window is emitted when it opens, starting immediately on subscription. It is hot and does not replay missed source values.",
+      "The default scheduler is asyncScheduler, with millisecond durations. Timers close windows; source arrivals supply their values, and windows can be empty.",
+      "Source completion completes active windows immediately and completes the outer stream. Source errors error both; unsubscription cancels source and scheduled boundary work.",
+      "Longer forms support overlapping windows, gaps, and a maximum value count. Without a separate creation interval, hitting the count limit immediately opens a replacement."
+    ],
+    "example": "of(1, 2, 3).pipe(windowTime(100), mergeMap(w => w.pipe(toArray()))) // next: [1, 2, 3] immediately on source completion; complete",
+    "overloads": "Also accepts (timeSpan, creationInterval, scheduler?) and (timeSpan, creationInterval, maxWindowSize, scheduler?). The creation interval defaults to no separate opening schedule and maxWindowSize to Infinity.",
+    "related": [
+      "bufferTime",
+      "windowCount",
+      "windowToggle"
+    ],
+    "source": "internal/operators/windowTime.ts",
+    "doc": "https://rxjs.dev/api/operators/windowTime",
+    "import": "rxjs"
+  },
+  {
+    "id": "windowToggle",
+    "name": "windowToggle",
+    "category": "Transformation Operators",
+    "kind": "pipeable",
+    "status": "current",
+    "signature": "windowToggle(openings: O*, closingSelector: O => unknown*): A* => (A*)*",
+    "behavior": "Each opening value creates and emits a live window. Its selected closing notifier completes that window on the first next.",
+    "details": [
+      "Windows can overlap or leave gaps. A source value is sent to every open window; with no open window it is omitted.",
+      "Closing-notifier completion alone does not close a window. Completion of openings prevents new openings without completing current windows.",
+      "Windows are hot and require timely subscriptions. Openings are subscribed before the source, allowing synchronous openings to establish windows first.",
+      "Source completion completes all current windows and the outer stream. Errors fail the outer stream; downstream unsubscription tears down source and notifier subscriptions."
+    ],
+    "example": "of(1, 2, 3).pipe(windowToggle(of('open'), () => NEVER), mergeMap(w => w.pipe(toArray()))) // next: [1, 2, 3]; complete",
+    "overloads": "Openings and closing-selector results may be ObservableInput values. The selector receives the opening value rather than the source value.",
+    "related": [
+      "bufferToggle",
+      "windowWhen",
+      "windowTime"
+    ],
+    "source": "internal/operators/windowToggle.ts",
+    "doc": "https://rxjs.dev/api/operators/windowToggle",
+    "import": "rxjs"
+  },
+  {
+    "id": "windowWhen",
+    "name": "windowWhen",
+    "category": "Transformation Operators",
+    "kind": "pipeable",
+    "status": "current",
+    "signature": "windowWhen(closingSelector: () => unknown*): A* => (A*)*",
+    "behavior": "Open and emit a window immediately. A selected closing next or completion closes it, opens a replacement, and calls the selector again.",
+    "details": [
+      "Only one window is active at a time. Unlike bufferWhen, a closing notifier that completes without a value also advances the window.",
+      "Windows are hot and do not replay past values. Subscribe when each is emitted to observe its contents.",
+      "Source completion completes the current window and outer stream. Source, selector, or closing errors error the window and the result; unsubscription tears down the active subscriptions.",
+      "The first closing notifier is subscribed before the source. Repeated immediately emitting or completing closers can reopen windows synchronously without letting the source run."
+    ],
+    "example": "of(1, 2, 3).pipe(windowWhen(() => NEVER), mergeMap(w => w.pipe(toArray()))) // next: [1, 2, 3]; complete",
+    "overloads": "The closing selector may return any ObservableInput.",
+    "related": [
+      "bufferWhen",
+      "window",
+      "windowToggle"
+    ],
+    "source": "internal/operators/windowWhen.ts",
+    "doc": "https://rxjs.dev/api/operators/windowWhen",
+    "import": "rxjs"
+  },
+  {
+    "id": "flatMap",
+    "name": "flatMap",
+    "category": "Transformation Operators",
+    "kind": "pipeable",
+    "status": "deprecated",
+    "replacement": "mergeMap(project, concurrent)",
+    "signature": "flatMap(project: A => B*, concurrent?: number): A* => B*",
+    "behavior": "Project values to inner streams and merge their emissions. This is the deprecated alias of mergeMap.",
+    "details": [
+      "Concurrency defaults to Infinity. A finite positive limit queues source values until an inner subscription can start.",
+      "Output follows inner emission timing, so source order is not guaranteed. Outer completion waits for active and queued work.",
+      "Errors or downstream unsubscription end active subscriptions and abandon queued work, exactly as with mergeMap."
+    ],
+    "example": "of(1, 2).pipe(flatMap(n => of(n, n * 10))) // next: 1, 10, 2, 20; complete",
+    "overloads": "Inherits mergeMap's ObservableInput projector, processing index, concurrency option, and legacy deprecated resultSelector overloads.",
+    "related": [
+      "mergeMap",
+      "mergeAll"
+    ],
+    "source": "internal/operators/flatMap.ts",
+    "doc": "https://rxjs.dev/api/operators/flatMap",
+    "import": "rxjs"
+  }
+]

@@ -1,0 +1,28 @@
+{
+  "name": "rxjs-ts-shorthand-notation",
+  "version": "1.0.0",
+  "private": true,
+  "description": "A stream-signature teaching reference for RxJS Deep Dive, pinned to RxJS 7.8.2.",
+  "type": "module",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/hansschenker/rxjs-ts-shorthand-notation.git"
+  },
+  "scripts": {
+    "build": "node scripts/build.mjs",
+    "check:generated": "node scripts/build.mjs --check",
+    "check:catalog": "node scripts/verify-catalog.mjs",
+    "typecheck": "tsc --noEmit",
+    "test": "node --test test/*.test.mjs",
+    "check": "npm run check:catalog && npm run typecheck && npm test && npm run check:generated",
+    "pdf": "python3 scripts/build-pdf.py",
+    "examples": "tsc --noEmit false --outDir tmp/examples && node tmp/examples/notation.js"
+  },
+  "devDependencies": {
+    "rxjs": "7.8.2",
+    "typescript": "5.9.3"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}

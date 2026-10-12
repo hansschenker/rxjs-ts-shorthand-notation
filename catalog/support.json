@@ -1,0 +1,910 @@
+[
+  {
+    "id": "multicast",
+    "name": "multicast",
+    "category": "Multicasting Operators",
+    "kind": "connectable",
+    "status": "deprecated",
+    "signature": "multicast(connector: () => Subject<A>): A* => ConnectableObservable<A>",
+    "behavior": "Routes one connected source execution through a Subject chosen by the caller. The returned legacy connectable exposes explicit connection control.",
+    "details": [
+      "Subscribing to the result attaches a listener; connect() starts the source connection. Unsubscribing the connection tears that connection down.",
+      "A Subject instance reuses that instance; a factory can supply a new one when the legacy connectable recreates its subject. The Subject type controls replay and terminal behavior."
+    ],
+    "example": "const connected$ = of(1, 2).pipe(multicast(() => new Subject<number>()));\nconnected$.subscribe(console.log);\nconnected$.connect(); // next: 1, 2; complete",
+    "overloads": "The selector overload, multicast(connector, shared => result), returns B* and shares within that selector instead of exposing connect().",
+    "related": [
+      "connectable",
+      "connect",
+      "share"
+    ],
+    "source": "internal/operators/multicast.ts",
+    "doc": "https://rxjs.dev/api/operators/multicast",
+    "import": "rxjs",
+    "replacement": "connectable(source, { connector }) for explicit connections; connect(selector, { connector }) for selector-local sharing."
+  },
+  {
+    "id": "publish",
+    "name": "publish",
+    "category": "Multicasting Operators",
+    "kind": "connectable",
+    "status": "deprecated",
+    "signature": "publish(): A* => ConnectableObservable<A>",
+    "behavior": "Creates a legacy connectable backed by one plain Subject, sharing live values without replay.",
+    "details": [
+      "Listeners can attach before connect() starts the source. The plain Subject has no cached next value for a late listener.",
+      "The no-selector form reuses its Subject. Its completed or errored Subject is retained for later listeners."
+    ],
+    "example": "const connected$ = of(1, 2).pipe(publish());\nconnected$.subscribe(console.log);\nconnected$.connect(); // next: 1, 2; complete",
+    "overloads": "publish(selector: A* => B*) returns A* => B*; use connect(selector) for that form.",
+    "related": [
+      "multicast",
+      "connectable",
+      "connect",
+      "share"
+    ],
+    "source": "internal/operators/publish.ts",
+    "doc": "https://rxjs.dev/api/operators/publish",
+    "import": "rxjs",
+    "replacement": "connectable(source, { connector: () => new Subject(), resetOnDisconnect: false }) for the legacy connection policy; share() for default automatic sharing."
+  },
+  {
+    "id": "publishBehavior",
+    "name": "publishBehavior",
+    "category": "Multicasting Operators",
+    "kind": "connectable",
+    "status": "deprecated",
+    "signature": "publishBehavior(seed: A): A* => ConnectableObservable<A>",
+    "behavior": "Creates a legacy connectable backed by a BehaviorSubject. While the subject is active, a listener immediately receives its current value, initially the seed.",
+    "details": [
+      "The seed can be observed before connect() starts the source; source values subsequently replace the current value.",
+      "A late listener after completion receives only complete, not the cached value. After error it receives that error."
+    ],
+    "example": "const connected$ = of(1, 2).pipe(publishBehavior(0));\nconnected$.subscribe(console.log); // next: 0\nconnected$.connect(); // next: 1, 2; complete",
+    "overloads": "",
+    "related": [
+      "publishReplay",
+      "connectable",
+      "share"
+    ],
+    "source": "internal/operators/publishBehavior.ts",
+    "doc": "https://rxjs.dev/api/operators/publishBehavior",
+    "import": "rxjs",
+    "replacement": "connectable(source, { connector: () => new BehaviorSubject(seed), resetOnDisconnect: false }); choose share configuration explicitly for automatic connections."
+  },
+  {
+    "id": "publishLast",
+    "name": "publishLast",
+    "category": "Multicasting Operators",
+    "kind": "connectable",
+    "status": "deprecated",
+    "signature": "publishLast(): A* => ConnectableObservable<A>",
+    "behavior": "Creates a legacy connectable backed by an AsyncSubject. It remembers the latest source value and publishes that value only when the source completes normally.",
+    "details": [
+      "An empty source completes without a next value; a source error is forwarded without publishing the remembered value.",
+      "After successful completion, late listeners receive the final value and complete. Before completion, source values are withheld."
+    ],
+    "example": "const connected$ = of(1, 2, 3).pipe(publishLast());\nconnected$.subscribe(console.log);\nconnected$.connect(); // next: 3; complete",
+    "overloads": "",
+    "related": [
+      "last",
+      "connectable",
+      "share"
+    ],
+    "source": "internal/operators/publishLast.ts",
+    "doc": "https://rxjs.dev/api/operators/publishLast",
+    "import": "rxjs",
+    "replacement": "connectable(source, { connector: () => new AsyncSubject(), resetOnDisconnect: false })."
+  },
+  {
+    "id": "publishReplay",
+    "name": "publishReplay",
+    "category": "Multicasting Operators",
+    "kind": "connectable",
+    "status": "deprecated",
+    "signature": "publishReplay(bufferSize?: number, windowTime?: number): A* => ConnectableObservable<A>",
+    "behavior": "Creates a legacy connectable backed by one ReplaySubject. New listeners first receive eligible cached values, then live values.",
+    "details": [
+      "The buffer is limited by count and age; both defaults are unbounded. connect() starts the source; replay itself does not start it.",
+      "The same ReplaySubject is retained, including its completion or error. Cached values within the retention limits can be replayed before that terminal notification."
+    ],
+    "example": "const connected$ = of(1, 2, 3).pipe(publishReplay(2));\nconst connection = (connected$ as ConnectableObservable<number>).connect();\nconnected$.subscribe(console.log); // next: 2, 3; complete",
+    "overloads": "This card shows runtime connectability. The no-selector public overload is typed only as MonoTypeOperatorFunction<A>, so TypeScript can require the cast shown. Selector and timestamp-provider overloads also exist.",
+    "related": [
+      "shareReplay",
+      "publishBehavior",
+      "connectable"
+    ],
+    "source": "internal/operators/publishReplay.ts",
+    "doc": "https://rxjs.dev/api/operators/publishReplay",
+    "import": "rxjs",
+    "replacement": "connectable(source, { connector: () => new ReplaySubject(bufferSize, windowTime), resetOnDisconnect: false }); shareReplay has different reset defaults."
+  },
+  {
+    "id": "share",
+    "name": "share",
+    "category": "Multicasting Operators",
+    "kind": "pipeable",
+    "status": "current",
+    "signature": "share(config?: ShareConfig<A>): A* => A*",
+    "behavior": "Shares a source connection among listeners attached to the same shared Observable instance. The default connector is a plain Subject, so it forwards live values without replay.",
+    "details": [
+      "By default the first listener connects, and losing the last listener disconnects an active source. Error, completion, and a zero listener count each reset the sharing state.",
+      "Separate subscriptions to a synchronously completing shared source can each start a new execution because the first execution has already completed and reset.",
+      "The configuration changes the connector and reset policies; it can retain a terminal state or delay a reset."
+    ],
+    "example": "const shared$ = interval(1000).pipe(share());\n// Overlapping subscriptions to shared$ use one interval connection.",
+    "overloads": "The signature preserves payload type; sharing is a connection policy, not a property of A* itself.",
+    "related": [
+      "shareReplay",
+      "connect",
+      "refCount"
+    ],
+    "source": "internal/operators/share.ts",
+    "doc": "https://rxjs.dev/api/operators/share",
+    "import": "rxjs"
+  },
+  {
+    "id": "connect",
+    "name": "connect",
+    "category": "Multicasting Operators",
+    "kind": "pipeable",
+    "status": "current",
+    "signature": "connect(selector: A* => B*, config?: ConnectConfig<A>): A* => B*",
+    "behavior": "Gives a selector a shared view of the source, then connects the source after the selected result has been subscribed. This lets several branches observe one source execution within that result subscription.",
+    "details": [
+      "A new connector is made for each subscription to the resulting Observable. This does not automatically share across separate result subscriptions.",
+      "The default connector is a plain Subject. The selected result supplies the output type and termination policy; tearing down the result also tears down its source connection."
+    ],
+    "example": "of(1, 2).pipe(connect(shared$ =>\n  merge(shared$.pipe(map(n => n * 10)), shared$.pipe(map(n => n + 1)))\n)) // next: 10, 2, 20, 3; complete",
+    "overloads": "The actual selector may return any ObservableInput<B>. ConnectConfig<A> requires a connector when a config object is supplied.",
+    "related": [
+      "share",
+      "connectable",
+      "multicast"
+    ],
+    "source": "internal/operators/connect.ts",
+    "doc": "https://rxjs.dev/api/operators/connect",
+    "import": "rxjs"
+  },
+  {
+    "id": "refCount",
+    "name": "refCount",
+    "category": "Multicasting Operators",
+    "kind": "pipeable",
+    "status": "deprecated",
+    "signature": "refCount(): ConnectableObservable<A> => A*",
+    "behavior": "Adds listener-count control to a legacy ConnectableObservable: connect for the first listener and disconnect an active shared connection after the last listener leaves.",
+    "details": [
+      "The connector and its retained terminal state come from the preceding legacy multicasting operation; refCount does not add replay or choose reset behavior.",
+      "This teaching input names the legacy connectable requirement even though the public TypeScript return type is MonoTypeOperatorFunction<A>. Do not treat it as a generic adapter for the newer connectable() result."
+    ],
+    "example": "const shared$ = interval(1000).pipe(publish(), refCount());\n// Legacy automatic connection pattern; prefer share().",
+    "overloads": "",
+    "related": [
+      "share",
+      "publish",
+      "connectable"
+    ],
+    "source": "internal/operators/refCount.ts",
+    "doc": "https://rxjs.dev/api/operators/refCount",
+    "import": "rxjs",
+    "replacement": "share(), with an explicit connector/reset configuration when preserving legacy behavior."
+  },
+  {
+    "id": "shareReplay",
+    "name": "shareReplay",
+    "category": "Multicasting Operators",
+    "kind": "pipeable",
+    "status": "current",
+    "signature": "shareReplay(config: ShareReplayConfig): A* => A*",
+    "behavior": "Shares through a ReplaySubject so late listeners receive eligible cached values before live values.",
+    "details": [
+      "Prefer an explicit bufferSize and refCount. With refCount: true, losing the last listener resets and disconnects an active source; refCount: false keeps that active connection.",
+      "In RxJS 7.8.2, an error resets the shared state, but successful completion retains the replay cache. refCount: true does not clear a successfully completed cache.",
+      "windowTime limits the age of replayed values; expiration is checked by the ReplaySubject and does not by itself trigger a new source execution."
+    ],
+    "example": "const shared$ = of(1, 2, 3).pipe(shareReplay({ bufferSize: 1, refCount: true }));\nshared$.subscribe(console.log); // next: 1, 2, 3; complete\nshared$.subscribe(console.log); // next: 3; complete",
+    "overloads": "The positional overload shareReplay(bufferSize?, windowTime?, scheduler?) defaults refCount to false. The scheduler supplies the replay timestamp clock; it does not schedule delivery of cached values.",
+    "related": [
+      "share",
+      "publishReplay"
+    ],
+    "source": "internal/operators/shareReplay.ts",
+    "doc": "https://rxjs.dev/api/operators/shareReplay",
+    "import": "rxjs"
+  },
+  {
+    "id": "catchError",
+    "name": "catchError",
+    "category": "Error Handling Operators",
+    "kind": "pipeable",
+    "status": "current",
+    "signature": "catchError(recover: unknown => B*): A* => (A | B)*",
+    "behavior": "Forwards source values until an error, then replaces the failed subscription with the Observable returned by recover.",
+    "details": [
+      "Values emitted before the error remain in the output. Returning a fallback does not undo those values or resume the failed source.",
+      "A thrown recovery error, or an error from the replacement, propagates downstream. Unsubscription tears down whichever subscription is active."
+    ],
+    "example": "concat(of(1), throwError(() => new Error('failed'))).pipe(\n  catchError(() => of('fallback'))\n) // next: 1, 'fallback'; complete",
+    "overloads": "The actual callback receives (error, caught) and returns ObservableInput<B>. Returning caught requests resubscription through the same catchError logic.",
+    "related": [
+      "retry",
+      "onErrorResumeNextWith"
+    ],
+    "source": "internal/operators/catchError.ts",
+    "doc": "https://rxjs.dev/api/operators/catchError",
+    "import": "rxjs"
+  },
+  {
+    "id": "retry",
+    "name": "retry",
+    "category": "Error Handling Operators",
+    "kind": "pipeable",
+    "status": "current",
+    "signature": "retry(config?: number | RetryConfig): A* => A*",
+    "behavior": "On source error, subscribes to the source again, up to the retry policy. Every attempt can contribute values to the same output.",
+    "details": [
+      "retry(2) allows the original subscription plus two retries. The default count is unbounded; count <= 0 does not retry. Completion is forwarded normally.",
+      "A delay may be a duration or an error/count callback. The first delay-notifier next retries; completion without a next completes the result, and a notifier error errors it.",
+      "resetOnSuccess resets the retry counter on a next value, not on completion; it defaults to false. Resubscription repeats source side effects."
+    ],
+    "example": "defer(() => of(1)).pipe(retry(2)) // next: 1; complete; no retry needed",
+    "overloads": "RetryConfig contains count?, delay?, and resetOnSuccess?. The callback retry count starts at 1.",
+    "related": [
+      "repeat",
+      "retryWhen",
+      "catchError"
+    ],
+    "source": "internal/operators/retry.ts",
+    "doc": "https://rxjs.dev/api/operators/retry",
+    "import": "rxjs"
+  },
+  {
+    "id": "retryWhen",
+    "name": "retryWhen",
+    "category": "Error Handling Operators",
+    "kind": "pipeable",
+    "status": "deprecated",
+    "signature": "retryWhen(notifier: unknown* => unknown*): A* => A*",
+    "behavior": "Feeds source errors into a notifier factory. Notifier next values request new subscriptions to the source.",
+    "details": [
+      "The notifier is created after the first source error. Its output controls retries; its own next payload is ignored.",
+      "Notifier completion completes the result and notifier error errors it. Ordinary source completion completes the result without requiring notifier completion."
+    ],
+    "example": "request$.pipe(retryWhen(errors$ => errors$.pipe(delay(1000))))\n// After each source error, the notifier requests a retry after 1 second.",
+    "overloads": "The notifier may return any ObservableInput. Errors are typed unknown in this teaching view instead of the public any.",
+    "related": [
+      "retry"
+    ],
+    "source": "internal/operators/retryWhen.ts",
+    "doc": "https://rxjs.dev/api/operators/retryWhen",
+    "import": "rxjs",
+    "replacement": "retry({ delay: (error, retryCount) => retrySignal$ }) for the usual retry policy; translate custom notifier state deliberately."
+  },
+  {
+    "id": "repeat",
+    "name": "repeat",
+    "category": "Utility Operators",
+    "kind": "pipeable",
+    "status": "current",
+    "signature": "repeat(config?: number | RepeatConfig): A* => A*",
+    "behavior": "On normal source completion, subscribes again according to the repeat policy. Source errors still terminate the result.",
+    "details": [
+      "repeat(3) means three total source subscriptions, including the first. The default is unbounded; count <= 0 completes without subscribing to the source.",
+      "A delay may be a duration or a completed-run-count callback. Its first next starts the next run; completion without a next ends repetition.",
+      "Resubscription repeats source side effects. Unbounded repetition of a synchronous source needs particular care; it need not yield execution."
+    ],
+    "example": "of(1, 2).pipe(repeat(2)) // next: 1, 2, 1, 2; complete",
+    "overloads": "RepeatConfig contains count? and delay?. The delay callback first receives 1 after the first run completes.",
+    "related": [
+      "retry",
+      "repeatWhen"
+    ],
+    "source": "internal/operators/repeat.ts",
+    "doc": "https://rxjs.dev/api/operators/repeat",
+    "import": "rxjs"
+  },
+  {
+    "id": "repeatWhen",
+    "name": "repeatWhen",
+    "category": "Utility Operators",
+    "kind": "pipeable",
+    "status": "deprecated",
+    "signature": "repeatWhen(notifier: void* => unknown*): A* => A*",
+    "behavior": "Feeds source completion signals into a notifier factory. Each notifier next requests another source subscription.",
+    "details": [
+      "Source errors are forwarded. Notifier errors also error the result.",
+      "Notifier completion stops requesting new runs; the result completes once the active source run has also completed. This differs from retryWhen notifier completion.",
+      "With synchronous sources and synchronous notifier completion, notification order can prevent a requested repeat from starting. Test that boundary when translating legacy notifier logic."
+    ],
+    "example": "timer(10).pipe(repeatWhen(completions$ => completions$.pipe(take(1))))\n// next: 0, then 0 from the repeated run; complete",
+    "overloads": "The void values are next notifications signalling completed runs, not the completion channel itself. The actual notifier return type is ObservableInput.",
+    "related": [
+      "repeat",
+      "retryWhen"
+    ],
+    "source": "internal/operators/repeatWhen.ts",
+    "doc": "https://rxjs.dev/api/operators/repeatWhen",
+    "import": "rxjs",
+    "replacement": "repeat({ delay: completedRunCount => repeatSignal$ }) for the usual repetition policy."
+  },
+  {
+    "id": "onErrorResumeNextWith",
+    "name": "onErrorResumeNextWith",
+    "category": "Error Handling Operators",
+    "kind": "pipeable",
+    "status": "current",
+    "signature": "onErrorResumeNextWith(next: B*): A* => (A | B)*",
+    "behavior": "Concatenates subscriptions, advancing to the next input after either normal completion or error. Errors from the constituent inputs are swallowed.",
+    "details": [
+      "Inputs are subscribed sequentially. An input that never terminates prevents reaching later inputs.",
+      "There is no recovery callback and no error value to inspect here; use catchError when the error should determine the fallback."
+    ],
+    "example": "throwError(() => new Error('failed')).pipe(onErrorResumeNextWith(of('next')))\n// next: 'next'; complete",
+    "overloads": "Variadic and array input forms accept ObservableInput values and produce the union of input payloads.",
+    "related": [
+      "onErrorResumeNext",
+      "catchError",
+      "concatWith"
+    ],
+    "source": "internal/operators/onErrorResumeNextWith.ts",
+    "doc": "https://rxjs.dev/api/operators/onErrorResumeNextWith",
+    "import": "rxjs"
+  },
+  {
+    "id": "onErrorResumeNext-operator",
+    "name": "onErrorResumeNext",
+    "category": "Error Handling Operators",
+    "kind": "pipeable",
+    "status": "deprecated",
+    "signature": "onErrorResumeNext(next: B*): A* => (A | B)*",
+    "behavior": "The legacy pipeable name for onErrorResumeNextWith. It advances to the next input when the current input completes or errors.",
+    "details": [
+      "This entry is the rxjs/operators export. The same name imported from rxjs is a creation function that takes all sources directly.",
+      "Errors from constituent inputs are swallowed; a nonterminating input prevents progression."
+    ],
+    "example": "// import { onErrorResumeNext } from 'rxjs/operators';\nthrowError(() => new Error('failed')).pipe(onErrorResumeNext(of(2))) // next: 2; complete",
+    "overloads": "",
+    "related": [
+      "onErrorResumeNextWith",
+      "onErrorResumeNext"
+    ],
+    "source": "internal/operators/onErrorResumeNextWith.ts",
+    "doc": "https://rxjs.dev/api/operators/onErrorResumeNext",
+    "import": "rxjs/operators",
+    "replacement": "onErrorResumeNextWith from rxjs."
+  },
+  {
+    "id": "throwIfEmpty",
+    "name": "throwIfEmpty",
+    "category": "Conditional and Boolean Operators",
+    "kind": "pipeable",
+    "status": "current",
+    "signature": "throwIfEmpty(errorFactory?: () => unknown): A* => A*",
+    "behavior": "Passes source values through, but replaces an empty normal completion with an error.",
+    "details": [
+      "The default factory creates EmptyError. It runs only if completion arrives before any next value.",
+      "This does not impose a deadline: a source that stays open without values keeps the result open."
+    ],
+    "example": "EMPTY.pipe(throwIfEmpty()) // no next; error: EmptyError",
+    "overloads": "",
+    "related": [
+      "defaultIfEmpty",
+      "first"
+    ],
+    "source": "internal/operators/throwIfEmpty.ts",
+    "doc": "https://rxjs.dev/api/operators/throwIfEmpty",
+    "import": "rxjs"
+  },
+  {
+    "id": "tap",
+    "name": "tap",
+    "category": "Utility Operators",
+    "kind": "pipeable",
+    "status": "current",
+    "signature": "tap(effect: A => void): A* => A*",
+    "behavior": "Runs an effect for each source value and forwards that same value. The callback return value is ignored.",
+    "details": [
+      "A synchronous exception in the next-value callback becomes an error downstream. Teardown hooks have teardown-error behavior instead. Callbacks can still mutate referenced objects.",
+      "tap does not start a subscription by itself. Its observer-object form also provides error, complete, subscribe, unsubscribe, and finalize hooks."
+    ],
+    "example": "of(1, 2).pipe(tap(n => console.log(n))) // next: 1, 2; complete; also logs each value",
+    "overloads": "Use an observer object for multiple hooks. The older separate next/error/complete-argument overload is deprecated; tap itself is current.",
+    "related": [
+      "map",
+      "finalize"
+    ],
+    "source": "internal/operators/tap.ts",
+    "doc": "https://rxjs.dev/api/operators/tap",
+    "import": "rxjs"
+  },
+  {
+    "id": "delay",
+    "name": "delay",
+    "category": "Utility Operators",
+    "kind": "pipeable",
+    "status": "current",
+    "signature": "delay(due: number | Date, scheduler?: SchedulerLike): A* => A*",
+    "behavior": "Holds source values until their scheduled release time. A numeric due delays each value by that duration; a Date is an absolute release time.",
+    "details": [
+      "The default scheduler is asyncScheduler. The source is subscribed immediately; this delays delivery, not the start of source work.",
+      "Completion waits for held values. A source error is forwarded immediately and discards held values; unsubscription also discards them.",
+      "An empty source can complete immediately: delay does not simply shift every terminal notification by the due time."
+    ],
+    "example": "of(1, 2).pipe(delay(100)) // after about 100 ms: next 1, 2; complete",
+    "overloads": "",
+    "related": [
+      "delayWhen",
+      "observeOn",
+      "subscribeOn"
+    ],
+    "source": "internal/operators/delay.ts",
+    "doc": "https://rxjs.dev/api/operators/delay",
+    "import": "rxjs"
+  },
+  {
+    "id": "delayWhen",
+    "name": "delayWhen",
+    "category": "Utility Operators",
+    "kind": "pipeable",
+    "status": "current",
+    "signature": "delayWhen(release: A => unknown*): A* => A*",
+    "behavior": "Creates a release Observable for each source value. The first next from that Observable releases that value.",
+    "details": [
+      "Each value has its own subscription, so later source values can be released first. Output order need not match source order.",
+      "A release Observable that completes without a next drops its value in RxJS 7.8.2. Source completion waits for outstanding releases; errors terminate and discard pending values."
+    ],
+    "example": "of(1, 2).pipe(delayWhen(n => timer(n === 1 ? 20 : 10)))\n// next: 2 at about 10 ms, 1 at about 20 ms; complete",
+    "overloads": "The actual callback also receives an index and may return ObservableInput. The deprecated subscriptionDelay overload gates the initial source subscription on notifier next or completion.",
+    "related": [
+      "delay",
+      "debounce"
+    ],
+    "source": "internal/operators/delayWhen.ts",
+    "doc": "https://rxjs.dev/api/operators/delayWhen",
+    "import": "rxjs"
+  },
+  {
+    "id": "materialize",
+    "name": "materialize",
+    "category": "Utility Operators",
+    "kind": "pipeable",
+    "status": "current",
+    "signature": "materialize(): A* => Notice<A>*",
+    "behavior": "Turns next, error, and complete notifications into ordinary next values describing those notifications.",
+    "details": [
+      "A source error becomes one E notice followed by normal completion of the materialized result. Normal source completion becomes one C notice followed by completion.",
+      "Unsubscription creates no notice. Materializing an outer stream does not materialize notifications inside its inner streams."
+    ],
+    "example": "of(1).pipe(materialize()) // next: N(1), C; complete\n// N(1) and C describe notification objects here, not function calls.",
+    "overloads": "Notice<A> denotes the observable-notification union. Runtime results are Notification<A> instances that also satisfy ObservableNotification<A>.",
+    "related": [
+      "dematerialize"
+    ],
+    "source": "internal/operators/materialize.ts",
+    "doc": "https://rxjs.dev/api/operators/materialize",
+    "import": "rxjs"
+  },
+  {
+    "id": "dematerialize",
+    "name": "dematerialize",
+    "category": "Utility Operators",
+    "kind": "pipeable",
+    "status": "current",
+    "signature": "dematerialize(): Notice<A>* => A*",
+    "behavior": "Interprets notification objects as real next, error, and complete notifications.",
+    "details": [
+      "An N notice emits its value. An E notice errors the result; a C notice completes it. Either terminal notice ends the subscription and prevents later notices from being delivered.",
+      "The input stream can also terminate through its own error or completion channel; a terminal notice is not required."
+    ],
+    "example": "of(1, 2).pipe(materialize(), dematerialize()) // next: 1, 2; complete",
+    "overloads": "The actual input is ObservableNotification<A>, including structurally compatible objects. The output type extracts the value of N notices.",
+    "related": [
+      "materialize"
+    ],
+    "source": "internal/operators/dematerialize.ts",
+    "doc": "https://rxjs.dev/api/operators/dematerialize",
+    "import": "rxjs"
+  },
+  {
+    "id": "observeOn",
+    "name": "observeOn",
+    "category": "Utility Operators",
+    "kind": "pipeable",
+    "status": "current",
+    "signature": "observeOn(scheduler: SchedulerLike, delay?: number): A* => A*",
+    "behavior": "Schedules delivery of next, error, and complete notifications to the downstream listener.",
+    "details": [
+      "It does not schedule when source subscription begins or move source work to another thread. The chosen scheduler determines execution timing.",
+      "Delay defaults to 0. Unsubscription cancels pending scheduled deliveries. Unlike delay, an error is scheduled too."
+    ],
+    "example": "of(1, 2).pipe(observeOn(asyncScheduler))\n// Schedules next 1, next 2, and complete after the current synchronous work.",
+    "overloads": "",
+    "related": [
+      "subscribeOn",
+      "delay"
+    ],
+    "source": "internal/operators/observeOn.ts",
+    "doc": "https://rxjs.dev/api/operators/observeOn",
+    "import": "rxjs"
+  },
+  {
+    "id": "subscribeOn",
+    "name": "subscribeOn",
+    "category": "Utility Operators",
+    "kind": "pipeable",
+    "status": "current",
+    "signature": "subscribeOn(scheduler: SchedulerLike, delay?: number): A* => A*",
+    "behavior": "Schedules the act of subscribing to the source, including the work performed as that subscription starts.",
+    "details": [
+      "Once the source starts, its own behavior determines how values are delivered. This is not a per-notification scheduling policy.",
+      "Delay defaults to 0. Unsubscribing before the scheduled subscription runs cancels it, so source work does not start."
+    ],
+    "example": "defer(() => of(1, 2)).pipe(subscribeOn(asyncScheduler))\n// The factory is called when the scheduled source subscription runs.",
+    "overloads": "",
+    "related": [
+      "observeOn",
+      "defer"
+    ],
+    "source": "internal/operators/subscribeOn.ts",
+    "doc": "https://rxjs.dev/api/operators/subscribeOn",
+    "import": "rxjs"
+  },
+  {
+    "id": "timeInterval",
+    "name": "timeInterval",
+    "category": "Utility Operators",
+    "kind": "pipeable",
+    "status": "current",
+    "signature": "timeInterval(scheduler?: SchedulerLike): A* => { value: A; interval: number }*",
+    "behavior": "Pairs each source value with the elapsed clock time since the preceding source value, or since subscription for the first value.",
+    "details": [
+      "The default clock is asyncScheduler.now(). interval is a duration, not an absolute timestamp.",
+      "The operator measures time without delaying values or scheduling source work. Clock units follow the supplied scheduler."
+    ],
+    "example": "interval(100).pipe(take(2), timeInterval())\n// Values 0 and 1 are wrapped with intervals of about 100 ms each.",
+    "overloads": "The actual result is a TimeInterval<A> object with these public fields.",
+    "related": [
+      "timestamp"
+    ],
+    "source": "internal/operators/timeInterval.ts",
+    "doc": "https://rxjs.dev/api/operators/timeInterval",
+    "import": "rxjs"
+  },
+  {
+    "id": "timestamp",
+    "name": "timestamp",
+    "category": "Utility Operators",
+    "kind": "pipeable",
+    "status": "current",
+    "signature": "timestamp(clock?: TimestampProvider): A* => { value: A; timestamp: number }*",
+    "behavior": "Pairs each source value with the current clock reading at the point this operator receives it.",
+    "details": [
+      "By default the clock uses Date.now(). timestamp is an absolute clock reading, unlike the elapsed duration from timeInterval.",
+      "A custom TimestampProvider only needs now(). Reading a clock neither delays delivery nor changes source scheduling."
+    ],
+    "example": "of(\"ready\").pipe(timestamp())\n// next: { value: \"ready\", timestamp: currentClockReading }; complete",
+    "overloads": "The actual result type is Timestamp<A>. A SchedulerLike can serve as a TimestampProvider.",
+    "related": [
+      "timeInterval",
+      "observeOn"
+    ],
+    "source": "internal/operators/timestamp.ts",
+    "doc": "https://rxjs.dev/api/operators/timestamp",
+    "import": "rxjs"
+  },
+  {
+    "id": "timeout",
+    "name": "timeout",
+    "category": "Utility Operators",
+    "kind": "pipeable",
+    "status": "current",
+    "signature": "timeout(due: number | Date, scheduler?: SchedulerLike): A* => A*\ntimeout(config: TimeoutConfig<A, B*> & { with: TimeoutInfo<A> => B* }): A* => (A | B)*",
+    "behavior": "Enforces a deadline for receiving a source value. On expiry it unsubscribes the source and either errors or switches to a configured fallback.",
+    "details": [
+      "For a positive numeric due, the deadline covers the first value and every following gap. A Date overload sets only the first-value deadline. asyncScheduler is the default scheduler.",
+      "The config separates first and each. Without with, expiry raises TimeoutError; with supplies the replacement subscription. Values already forwarded remain in the result.",
+      "The fallback is not recursively checked by the same timeout. Completion or error before a deadline ends the source normally for that channel."
+    ],
+    "example": "NEVER.pipe(timeout({ first: 100, with: () => of(\"fallback\") }))\n// next: \"fallback\" at about 100 ms; complete",
+    "overloads": "At least first or each is required at runtime. The full API accepts ObservableInput fallbacks and metadata. The zero/negative each edge is not represented by the positive-duration teaching rule.",
+    "related": [
+      "timeoutWith",
+      "takeUntil",
+      "catchError"
+    ],
+    "source": "internal/operators/timeout.ts",
+    "doc": "https://rxjs.dev/api/operators/timeout",
+    "import": "rxjs"
+  },
+  {
+    "id": "timeoutWith",
+    "name": "timeoutWith",
+    "category": "Utility Operators",
+    "kind": "pipeable",
+    "status": "deprecated",
+    "signature": "timeoutWith(due: number | Date, fallback: B*, scheduler?: SchedulerLike): A* => (A | B)*",
+    "behavior": "The older timeout form that switches to a supplied fallback when a source-value deadline expires.",
+    "details": [
+      "A positive number guards the first value and subsequent gaps; a Date guards the first value only.",
+      "On expiry the source is unsubscribed and fallback is subscribed. Previously delivered values remain in the output."
+    ],
+    "example": "NEVER.pipe(timeoutWith(100, of(\"fallback\")))\n// next: \"fallback\" at about 100 ms; complete",
+    "overloads": "The actual fallback may be any ObservableInput<B>.",
+    "related": [
+      "timeout"
+    ],
+    "source": "internal/operators/timeoutWith.ts",
+    "doc": "https://rxjs.dev/api/operators/timeoutWith",
+    "import": "rxjs",
+    "replacement": "timeout({ each: duration, with: () => fallback }) or timeout({ first: date, with: () => fallback })."
+  },
+  {
+    "id": "toArray",
+    "name": "toArray",
+    "category": "Utility Operators",
+    "kind": "pipeable",
+    "status": "current",
+    "signature": "toArray(): A* => (A[])*",
+    "behavior": "Collects source values into one array and emits that array when the source completes normally.",
+    "details": [
+      "An empty completed source emits [] once. Source errors and unsubscription discard the accumulated array.",
+      "A source that never completes never emits its array. Memory use grows with the number of collected values."
+    ],
+    "example": "of(1, 2, 3).pipe(toArray()) // next: [1, 2, 3]; complete",
+    "overloads": "The result is a stream carrying an array value; it is not an array of Observables.",
+    "related": [
+      "buffer",
+      "reduce"
+    ],
+    "source": "internal/operators/toArray.ts",
+    "doc": "https://rxjs.dev/api/operators/toArray",
+    "import": "rxjs"
+  },
+  {
+    "id": "finalize",
+    "name": "finalize",
+    "category": "Utility Operators",
+    "kind": "pipeable",
+    "status": "current",
+    "signature": "finalize(cleanup: () => void): A* => A*",
+    "behavior": "Registers cleanup for the subscription. It runs when that subscription ends through completion, error, or unsubscription.",
+    "details": [
+      "The callback receives no reason or last value. It is not a complete callback: cancellation also runs it.",
+      "Placement around sharing matters: upstream cleanup follows the shared source connection; downstream cleanup follows each listener subscription."
+    ],
+    "example": "NEVER.pipe(finalize(() => console.log(\"released\"))).subscribe().unsubscribe();\n// No next or complete; logs \"released\" during teardown.",
+    "overloads": "",
+    "related": [
+      "tap",
+      "share"
+    ],
+    "source": "internal/operators/finalize.ts",
+    "doc": "https://rxjs.dev/api/operators/finalize",
+    "import": "rxjs"
+  },
+  {
+    "id": "defaultIfEmpty",
+    "name": "defaultIfEmpty",
+    "category": "Conditional and Boolean Operators",
+    "kind": "pipeable",
+    "status": "current",
+    "signature": "defaultIfEmpty(fallback: B): A* => (A | B)*",
+    "behavior": "Forwards source values. If the source completes normally without any value, it emits the fallback before completing.",
+    "details": [
+      "null and undefined are ordinary values and therefore prevent the fallback from being emitted.",
+      "It does not recover errors and does not impose a timeout on a silent, open source."
+    ],
+    "example": "EMPTY.pipe(defaultIfEmpty(\"none\")) // next: \"none\"; complete",
+    "overloads": "",
+    "related": [
+      "throwIfEmpty",
+      "startWith"
+    ],
+    "source": "internal/operators/defaultIfEmpty.ts",
+    "doc": "https://rxjs.dev/api/operators/defaultIfEmpty",
+    "import": "rxjs"
+  },
+  {
+    "id": "every",
+    "name": "every",
+    "category": "Conditional and Boolean Operators",
+    "kind": "pipeable",
+    "status": "current",
+    "signature": "every(predicate: A => boolean): A* => boolean*",
+    "behavior": "Emits false and completes at the first value that fails the predicate. If all received values pass and the source completes, it emits true.",
+    "details": [
+      "An empty completed source emits true. An open source whose values all pass has not yet established true.",
+      "The first failing value ends the subscription early. Predicate exceptions error the result."
+    ],
+    "example": "of(2, 4, 5, 6).pipe(every(n => n % 2 === 0)) // next: false; complete at 5",
+    "overloads": "The actual predicate also receives index and source. Boolean-constructor overloads are omitted.",
+    "related": [
+      "find",
+      "isEmpty"
+    ],
+    "source": "internal/operators/every.ts",
+    "doc": "https://rxjs.dev/api/operators/every",
+    "import": "rxjs"
+  },
+  {
+    "id": "find",
+    "name": "find",
+    "category": "Conditional and Boolean Operators",
+    "kind": "pipeable",
+    "status": "current",
+    "signature": "find(predicate: A => boolean): A* => (A | undefined)*",
+    "behavior": "Emits the first matching value and completes. If the source completes without a match, it emits undefined and completes.",
+    "details": [
+      "A successful match unsubscribes early. A nonterminating source with no match can remain open indefinitely.",
+      "undefined is a delivered payload here, not an empty stream. It is indistinguishable by value from a matched undefined unless the domain supplies a tag."
+    ],
+    "example": "of(1, 3).pipe(find(n => n % 2 === 0)) // next: undefined; complete",
+    "overloads": "Type-guard predicates narrow the successful payload to B; the result still includes undefined. Index and source callback parameters are omitted.",
+    "related": [
+      "first",
+      "findIndex",
+      "filter"
+    ],
+    "source": "internal/operators/find.ts",
+    "doc": "https://rxjs.dev/api/operators/find",
+    "import": "rxjs"
+  },
+  {
+    "id": "findIndex",
+    "name": "findIndex",
+    "category": "Conditional and Boolean Operators",
+    "kind": "pipeable",
+    "status": "current",
+    "signature": "findIndex(predicate: A => boolean): A* => number*",
+    "behavior": "Emits the zero-based index of the first matching source value and completes. If the source completes with no match, it emits -1.",
+    "details": [
+      "The index counts all received source values, including those that do not match.",
+      "A match ends the source subscription early; without a match, normal completion is needed to conclude -1."
+    ],
+    "example": "of(\"a\", \"b\", \"c\").pipe(findIndex(x => x === \"b\")) // next: 1; complete",
+    "overloads": "The actual predicate also receives index and source.",
+    "related": [
+      "find"
+    ],
+    "source": "internal/operators/findIndex.ts",
+    "doc": "https://rxjs.dev/api/operators/findIndex",
+    "import": "rxjs"
+  },
+  {
+    "id": "isEmpty",
+    "name": "isEmpty",
+    "category": "Conditional and Boolean Operators",
+    "kind": "pipeable",
+    "status": "current",
+    "signature": "isEmpty(): A* => boolean*",
+    "behavior": "Emits false and completes as soon as a source value arrives. Emits true only when the source completes without a value.",
+    "details": [
+      "A source error before a value is an error, not true. A silent source that never completes leaves the result open.",
+      "The false outcome needs only the first value and cancels further source delivery."
+    ],
+    "example": "of(undefined).pipe(isEmpty()) // next: false; complete",
+    "overloads": "",
+    "related": [
+      "every",
+      "defaultIfEmpty"
+    ],
+    "source": "internal/operators/isEmpty.ts",
+    "doc": "https://rxjs.dev/api/operators/isEmpty",
+    "import": "rxjs"
+  },
+  {
+    "id": "sequenceEqual",
+    "name": "sequenceEqual",
+    "category": "Conditional and Boolean Operators",
+    "kind": "pipeable",
+    "status": "current",
+    "signature": "sequenceEqual(other: A*, equal?: (A, A) => boolean): A* => boolean*",
+    "behavior": "Compares the two sequences by value position, ignoring differences in their emission times. It emits one boolean once equality or inequality can be decided.",
+    "details": [
+      "Both streams must complete with matching lengths and values to establish true. A mismatching pair or an extra value after the other completes can establish false early.",
+      "The default equality is ===. Faster input values are buffered while awaiting partners, so a large rate imbalance can grow memory."
+    ],
+    "example": "of(1, 2).pipe(sequenceEqual(of(1, 2))) // next: true; complete",
+    "overloads": "The actual comparison input may be ObservableInput<A>.",
+    "related": [
+      "zip",
+      "every"
+    ],
+    "source": "internal/operators/sequenceEqual.ts",
+    "doc": "https://rxjs.dev/api/operators/sequenceEqual",
+    "import": "rxjs"
+  },
+  {
+    "id": "count",
+    "name": "count",
+    "category": "Mathematical and Aggregate Operators",
+    "kind": "pipeable",
+    "status": "current",
+    "signature": "count(predicate?: A => boolean): A* => number*",
+    "behavior": "Counts received source values, or only the values satisfying a predicate, and emits the total on normal completion.",
+    "details": [
+      "An empty completed source emits 0. No running counts are emitted.",
+      "A source error prevents a final count. Use scan when the lesson requires a running count."
+    ],
+    "example": "of(1, 2, 3, 4).pipe(count(n => n % 2 === 0)) // next: 2; complete",
+    "overloads": "The optional predicate also receives the zero-based source index.",
+    "related": [
+      "scan",
+      "reduce"
+    ],
+    "source": "internal/operators/count.ts",
+    "doc": "https://rxjs.dev/api/operators/count",
+    "import": "rxjs"
+  },
+  {
+    "id": "max",
+    "name": "max",
+    "category": "Mathematical and Aggregate Operators",
+    "kind": "pipeable",
+    "status": "current",
+    "signature": "max(compare?: (A, A) => number): A* => A*",
+    "behavior": "Remembers the greatest source value and emits it on normal completion.",
+    "details": [
+      "An empty completed source emits no value. No running maximum is emitted before completion.",
+      "Without a comparer it uses JavaScript >. A comparer returns a positive number when its first argument should rank higher; ties select the later value in RxJS 7.8.2."
+    ],
+    "example": "of(3, 1, 5, 2).pipe(max()) // next: 5; complete",
+    "overloads": "",
+    "related": [
+      "min",
+      "reduce",
+      "scan"
+    ],
+    "source": "internal/operators/max.ts",
+    "doc": "https://rxjs.dev/api/operators/max",
+    "import": "rxjs"
+  },
+  {
+    "id": "min",
+    "name": "min",
+    "category": "Mathematical and Aggregate Operators",
+    "kind": "pipeable",
+    "status": "current",
+    "signature": "min(compare?: (A, A) => number): A* => A*",
+    "behavior": "Remembers the least source value and emits it on normal completion.",
+    "details": [
+      "An empty completed source emits no value. No running minimum is emitted before completion.",
+      "Without a comparer it uses JavaScript <. A comparer returns a negative number when its first argument should rank lower; ties select the later value in RxJS 7.8.2."
+    ],
+    "example": "of(3, 1, 5, 2).pipe(min()) // next: 1; complete",
+    "overloads": "",
+    "related": [
+      "max",
+      "reduce",
+      "scan"
+    ],
+    "source": "internal/operators/min.ts",
+    "doc": "https://rxjs.dev/api/operators/min",
+    "import": "rxjs"
+  },
+  {
+    "id": "reduce",
+    "name": "reduce",
+    "category": "Mathematical and Aggregate Operators",
+    "kind": "pipeable",
+    "status": "current",
+    "signature": "reduce(reducer: (S, A) => S, seed: S): A* => S*",
+    "behavior": "Updates accumulated state for each source value, then emits only the final state on normal completion.",
+    "details": [
+      "With the seed shown here, an empty completed source emits the seed once. scan with the same seed emits nothing for that empty source.",
+      "The seed is an initial value, not a deep clone; use an immutable reducer. Error or unsubscription prevents the final state from being emitted."
+    ],
+    "example": "of(1, 2, 3).pipe(reduce((sum, n) => sum + n, 0)) // next: 6; complete",
+    "overloads": "Without a seed, the first input initializes state without calling the reducer. In RxJS 7.8.2 an empty source with that overload completes without a value. The reducer also receives an index.",
+    "related": [
+      "scan",
+      "toArray",
+      "count"
+    ],
+    "source": "internal/operators/reduce.ts",
+    "doc": "https://rxjs.dev/api/operators/reduce",
+    "import": "rxjs"
+  }
+]

@@ -1,0 +1,786 @@
+[
+  {
+    "id": "ajax",
+    "name": "ajax",
+    "category": "Creation Operators",
+    "kind": "creation",
+    "status": "current",
+    "signature": "ajax(request: string | AjaxConfig): AjaxResponse<A>*",
+    "behavior": "Start an XMLHttpRequest on subscription and emit response objects containing a payload of type A. With the default progress settings, a successful request emits its response and completes.",
+    "details": [
+      "Each subscription creates a request. Defaults include GET, asynchronous operation, and JSON response decoding.",
+      "Network errors, timeouts, and HTTP statuses of 400 or above use the error channel.",
+      "Unsubscribing aborts an unfinished request.",
+      "Enabling upload or download progress adds response-shaped progress emissions; ajax is therefore not universally a one-value stream."
+    ],
+    "example": "ajax<{ name: string }>('/api/profile')\n// On a successful default request: next an AjaxResponse whose response is the profile; complete.",
+    "overloads": "A names the decoded response payload, not the entire response wrapper; the type argument performs no runtime validation. ajax.getJSON<A>(url): A* selects only the response body. GET/POST/PUT/PATCH/DELETE helpers and AjaxConfig provide request options.",
+    "related": [
+      "fromFetch",
+      "defer"
+    ],
+    "source": "internal/ajax/ajax.ts",
+    "doc": "https://rxjs.dev/api/ajax/ajax",
+    "import": "rxjs/ajax"
+  },
+  {
+    "id": "bindCallback",
+    "name": "bindCallback",
+    "category": "Creation Operators",
+    "kind": "creation",
+    "status": "current",
+    "signature": "bindCallback(fn: (arg: A, callback: B => void) => void): A => B*",
+    "behavior": "Turn a callback API into a function that returns a stream of its result. Calling the bound function prepares that stream; its first subscription invokes the original function.",
+    "details": [
+      "For a normal single-result callback, emit its result and complete when the callback resolves.",
+      "Subscribers to the same returned Observable share one invocation and receive its cached result, including late subscribers. Calling the bound function again creates a separate result stream.",
+      "Unsubscribing removes this observer; it does not supply a cancellation mechanism to the callback API."
+    ],
+    "example": "const double = (n: number, done: (result: number) => void) => done(n * 2);\nbindCallback(double)(3) // next: 6; complete synchronously",
+    "overloads": "Shown for one input argument and one callback result. Real signatures preserve arbitrary argument tuples; several result arguments become one tuple, while no result arguments produce one undefined value. An optional scheduler controls invocation and delivery; a result-selector form also exists.",
+    "related": [
+      "bindNodeCallback",
+      "fromEventPattern"
+    ],
+    "source": "internal/observable/bindCallback.ts",
+    "doc": "https://rxjs.dev/api/index/function/bindCallback",
+    "import": "rxjs"
+  },
+  {
+    "id": "bindNodeCallback",
+    "name": "bindNodeCallback",
+    "category": "Creation Operators",
+    "kind": "creation",
+    "status": "current",
+    "signature": "bindNodeCallback(fn: (arg: A, callback: (error: unknown, value: B) => void) => void): A => B*",
+    "behavior": "Adapt a Node-style error-first callback. A successful callback supplies the result value; an error argument terminates the stream through the error channel.",
+    "details": [
+      "Only null or undefined in the error slot means success; other values count as errors.",
+      "The original function runs on the first subscription to each returned Observable. That Observable shares and caches its callback result for later subscribers.",
+      "This adapter does not automatically cancel the underlying operation when a subscriber unsubscribes."
+    ],
+    "example": "const lengthOf = (s: string, done: (err: Error | null, n: number) => void) => done(null, s.length);\nbindNodeCallback(lengthOf)('RxJS') // next: 4; complete synchronously",
+    "overloads": "Shown for one input and one success result. Real signatures preserve argument tuples; multiple success results become one tuple, and no success result produces undefined. Optional scheduler and result-selector forms are available.",
+    "related": [
+      "bindCallback",
+      "from"
+    ],
+    "source": "internal/observable/bindNodeCallback.ts",
+    "doc": "https://rxjs.dev/api/index/function/bindNodeCallback",
+    "import": "rxjs"
+  },
+  {
+    "id": "defer",
+    "name": "defer",
+    "category": "Creation Operators",
+    "kind": "creation",
+    "status": "current",
+    "signature": "defer(factory: () => Input<A>): A*",
+    "behavior": "Run the factory separately for each subscription, convert its result to an Observable, and forward that execution.",
+    "details": [
+      "The factory runs when subscribed, not when defer is called.",
+      "A thrown factory error becomes an error notification.",
+      "A promise created inside the factory starts at subscription time. Returning an already-created promise does not restart its work."
+    ],
+    "example": "const value$ = defer(() => of(Math.random()));\n// Each subscription draws a new number, emits it, and completes.",
+    "overloads": "The factory can return any ObservableInput, including an Observable, promise, array, or iterable.",
+    "related": [
+      "from",
+      "iif",
+      "using"
+    ],
+    "source": "internal/observable/defer.ts",
+    "doc": "https://rxjs.dev/api/index/function/defer",
+    "import": "rxjs"
+  },
+  {
+    "id": "empty",
+    "name": "empty",
+    "category": "Creation Operators",
+    "kind": "creation",
+    "status": "deprecated",
+    "signature": "empty(scheduler?: SchedulerLike): never*",
+    "behavior": "Create a stream that completes without emitting a value.",
+    "details": [
+      "Without a scheduler, this returns EMPTY and completes synchronously on subscription.",
+      "With a scheduler, schedule the completion notification; unsubscribing first cancels that scheduled completion."
+    ],
+    "example": "empty() // no next values; complete synchronously",
+    "overloads": "This function is deprecated in RxJS 7.8.2. EMPTY expresses the usual immediate form.",
+    "related": [
+      "EMPTY",
+      "NEVER",
+      "throwError"
+    ],
+    "source": "internal/observable/empty.ts",
+    "doc": "https://rxjs.dev/api/index/function/empty",
+    "import": "rxjs",
+    "replacement": "EMPTY; for scheduled completion, scheduled([], scheduler)."
+  },
+  {
+    "id": "from",
+    "name": "from",
+    "category": "Creation Operators",
+    "kind": "creation",
+    "status": "current",
+    "signature": "from(input: Input<A>): A*",
+    "behavior": "Convert an Observable-compatible input into a stream of its values. The input kind determines how those values become available.",
+    "details": [
+      "Arrays and synchronous iterables emit their items synchronously by default, then complete when exhausted.",
+      "A promise emits its resolved value and completes, or reports its rejection as an error. Its underlying work may already have started.",
+      "An existing Observable retains its execution behavior. Unsubscribing from a promise conversion stops delivery but does not cancel the promise itself."
+    ],
+    "example": "from([1, 2, 3]) // next: 1, 2, 3; complete synchronously",
+    "overloads": "Input<A> includes Observable, interoperable Observable, promise-like, array-like, iterable, async iterable, and readable-stream-like inputs. The scheduler-argument overload is deprecated; use scheduled(input, scheduler).",
+    "related": [
+      "of",
+      "scheduled",
+      "defer"
+    ],
+    "source": "internal/observable/from.ts",
+    "doc": "https://rxjs.dev/api/index/function/from",
+    "import": "rxjs"
+  },
+  {
+    "id": "fromEvent",
+    "name": "fromEvent",
+    "category": "Creation Operators",
+    "kind": "creation",
+    "status": "current",
+    "signature": "fromEvent(target: EventTarget, eventName: string, options?: AddEventListenerOptions): A*",
+    "behavior": "Turn events from a target into values. In the common DOM form, each event object becomes one emitted value.",
+    "details": [
+      "Each subscription installs its own listener; unsubscription removes that listener.",
+      "An event source does not complete merely because no more events arrive.",
+      "DOM options such as once affect the listener; once does not send an RxJS complete notification."
+    ],
+    "example": "fromEvent<MouseEvent>(document, 'click')\n// next: each click event; unsubscribe removes this listener",
+    "overloads": "Shown for a DOM EventTarget with an explicitly selected event type A. Node-style and jQuery-style emitters and collections of targets are also supported. Multiple event-handler arguments are emitted as one array; result-selector forms can project them.",
+    "related": [
+      "fromEventPattern",
+      "takeUntil"
+    ],
+    "source": "internal/observable/fromEvent.ts",
+    "doc": "https://rxjs.dev/api/index/function/fromEvent",
+    "import": "rxjs"
+  },
+  {
+    "id": "fromEventPattern",
+    "name": "fromEventPattern",
+    "category": "Creation Operators",
+    "kind": "creation",
+    "status": "current",
+    "signature": "fromEventPattern(addHandler: (handler: A => void) => R, removeHandler?: (handler: A => void, token: R) => void): A*",
+    "behavior": "Adapt an event API by supplying the functions that attach and detach a handler. Every handler call supplies an emission.",
+    "details": [
+      "addHandler runs for each subscription. Its return value is a registration token, passed to removeHandler together with the same handler during teardown.",
+      "If removeHandler is omitted, this adapter cannot detach the registration for you.",
+      "Events continue until the subscription ends; the adapter has no automatic completion signal."
+    ],
+    "example": "fromEventPattern<Event>(\n  handler => document.addEventListener('visibilitychange', handler),\n  handler => document.removeEventListener('visibilitychange', handler)\n) // next: visibility events; unsubscribe detaches the handler",
+    "overloads": "Shown for a handler receiving one A and a registration token R, which may be void. Several handler arguments become one array, while zero handler arguments become an empty array. An optional result selector can map the handler arguments.",
+    "related": [
+      "fromEvent",
+      "bindCallback"
+    ],
+    "source": "internal/observable/fromEventPattern.ts",
+    "doc": "https://rxjs.dev/api/index/function/fromEventPattern",
+    "import": "rxjs"
+  },
+  {
+    "id": "generate",
+    "name": "generate",
+    "category": "Creation Operators",
+    "kind": "creation",
+    "status": "current",
+    "signature": "generate(options: {\n  initialState: S,\n  condition?: S => boolean,\n  iterate: S => S,\n  resultSelector: S => A,\n  scheduler?: SchedulerLike\n}): A*",
+    "behavior": "Generate a sequence by repeatedly testing a state, projecting a value, and advancing the state. Stop when the condition becomes false.",
+    "details": [
+      "The condition is checked before emitting from the initial state and before every later state.",
+      "Without a scheduler, the loop runs synchronously; an unbounded loop can occupy the current call stack until unsubscribed or interrupted by an error.",
+      "A supplied scheduler schedules iteration. Each subscription starts again from initialState."
+    ],
+    "example": "generate({ initialState: 1, condition: n => n <= 3, iterate: n => n + 1, resultSelector: n => n * n })\n// next: 1, 4, 9; complete synchronously",
+    "overloads": "Without resultSelector, emit the state itself: S*. Omitting condition generates without a condition-based stopping point. The older positional-argument overloads are deprecated; the options-object form is current.",
+    "related": [
+      "range",
+      "expand",
+      "scan"
+    ],
+    "source": "internal/observable/generate.ts",
+    "doc": "https://rxjs.dev/api/index/function/generate",
+    "import": "rxjs"
+  },
+  {
+    "id": "interval",
+    "name": "interval",
+    "category": "Creation Operators",
+    "kind": "creation",
+    "status": "current",
+    "signature": "interval(period?: number, scheduler?: SchedulerLike): number*",
+    "behavior": "Emit an increasing counter at a recurring interval, starting with 0 after the first period.",
+    "details": [
+      "Defaults are period = 0 and asyncScheduler; a negative period is treated as 0.",
+      "Each subscription starts its own counter and scheduled work.",
+      "It has no natural completion. Unsubscribing cancels its scheduled work."
+    ],
+    "example": "interval(1000).pipe(take(3))\n// next: 0, 1, 2 on successive one-second periods; then complete",
+    "overloads": "Periods use milliseconds with the default scheduler; actual delivery follows the selected scheduler and host timing.",
+    "related": [
+      "timer",
+      "animationFrames"
+    ],
+    "source": "internal/observable/interval.ts",
+    "doc": "https://rxjs.dev/api/index/function/interval",
+    "import": "rxjs"
+  },
+  {
+    "id": "of",
+    "name": "of",
+    "category": "Creation Operators",
+    "kind": "creation",
+    "status": "current",
+    "signature": "of(...values: A[]): A*",
+    "behavior": "Emit the supplied argument values in order, then complete. Each argument stays a single value.",
+    "details": [
+      "By default, emission and completion happen synchronously during subscription.",
+      "Arrays, promises, null, and undefined are emitted as values; of does not unpack them.",
+      "With no arguments, complete without a next value."
+    ],
+    "example": "of([1, 2], [3]) // next: [1, 2], [3]; complete synchronously",
+    "overloads": "For heterogeneous arguments, A is their union. Scheduler-argument overloads are deprecated; use scheduled(values, scheduler) when scheduling these values is intended.",
+    "related": [
+      "from",
+      "EMPTY"
+    ],
+    "source": "internal/observable/of.ts",
+    "doc": "https://rxjs.dev/api/index/function/of",
+    "import": "rxjs"
+  },
+  {
+    "id": "range",
+    "name": "range",
+    "category": "Creation Operators",
+    "kind": "creation",
+    "status": "current",
+    "signature": "range(start: number, count: number): number*",
+    "behavior": "Emit count numbers, starting at start and increasing by 1, then complete.",
+    "details": [
+      "The common form emits synchronously during subscription.",
+      "A count of zero or less produces an empty completion; use nonnegative integer counts for the intended counting contract.",
+      "Downstream unsubscription stops the loop before later values are emitted."
+    ],
+    "example": "range(3, 3) // next: 3, 4, 5; complete synchronously",
+    "overloads": "The single argument is the count: range(3) starts at 0 and emits 0, 1, 2. The scheduler-argument overload is deprecated; scheduled(range(start, count), scheduler) schedules observable subscription and delivery.",
+    "related": [
+      "generate",
+      "of",
+      "scheduled"
+    ],
+    "source": "internal/observable/range.ts",
+    "doc": "https://rxjs.dev/api/index/function/range",
+    "import": "rxjs"
+  },
+  {
+    "id": "throwError",
+    "name": "throwError",
+    "category": "Creation Operators",
+    "kind": "creation",
+    "status": "current",
+    "signature": "throwError(errorFactory: () => unknown): never*",
+    "behavior": "Create a stream that reports an error as soon as it is subscribed.",
+    "details": [
+      "The factory runs for each subscription, so an error object can be created at the point of execution.",
+      "The result emits no next values and terminates with error, rather than complete."
+    ],
+    "example": "throwError(() => new Error('Failed')) // no next values; error: Failed",
+    "overloads": "The overload accepting an error value directly and the scheduler-argument overload are deprecated. The error factory form is current.",
+    "related": [
+      "EMPTY",
+      "NEVER",
+      "catchError"
+    ],
+    "source": "internal/observable/throwError.ts",
+    "doc": "https://rxjs.dev/api/index/function/throwError",
+    "import": "rxjs"
+  },
+  {
+    "id": "timer",
+    "name": "timer",
+    "category": "Creation Operators",
+    "kind": "creation",
+    "status": "current",
+    "signature": "timer(due: number | Date, scheduler?: SchedulerLike): number*",
+    "behavior": "Wait until the due time, emit 0, and complete. A separate repeating form continues with an increasing counter.",
+    "details": [
+      "A numeric due time is relative to subscription; a Date is interpreted against scheduler.now(). Past due times are treated as zero delay.",
+      "The default scheduler is asyncScheduler, so timer(0) schedules its emission rather than behaving like synchronous of(0).",
+      "timer(startDue, period, scheduler?) emits 0 at the start time and then 1, 2, ... at that period; a nonnegative period makes it recurring.",
+      "Unsubscribing cancels the scheduled work. The repeating form has no natural completion."
+    ],
+    "example": "timer(1000) // after the scheduled delay: next 0; complete",
+    "overloads": "Shown for the one-shot overload, whose runtime value is 0; the public TypeScript payload type is number. The repeating overload also returns number*. A negative interval duration is treated as a one-shot timer in 7.8.2.",
+    "related": [
+      "interval",
+      "delay",
+      "takeUntil"
+    ],
+    "source": "internal/observable/timer.ts",
+    "doc": "https://rxjs.dev/api/index/function/timer",
+    "import": "rxjs"
+  },
+  {
+    "id": "iif",
+    "name": "iif",
+    "category": "Creation Operators",
+    "kind": "creation",
+    "status": "current",
+    "signature": "iif(condition: () => boolean, whenTrue: Input<A>, whenFalse: Input<B>): (A | B)*",
+    "behavior": "Choose one of two inputs at subscription time and forward that chosen execution.",
+    "details": [
+      "Evaluate condition for every subscription and subscribe only to the selected input.",
+      "Constructing the branch arguments still follows normal JavaScript evaluation. Wrap branch work in defer when its creation must also wait.",
+      "A thrown condition error goes to the error channel."
+    ],
+    "example": "iif(() => true, of('yes'), of('no')) // next: 'yes'; complete",
+    "overloads": "Both branches accept ObservableInput. The result payload is the union of their value types.",
+    "related": [
+      "defer",
+      "EMPTY"
+    ],
+    "source": "internal/observable/iif.ts",
+    "doc": "https://rxjs.dev/api/index/function/iif",
+    "import": "rxjs"
+  },
+  {
+    "id": "combineLatest",
+    "name": "combineLatest",
+    "category": "Join Creation Operators",
+    "kind": "join-creation",
+    "status": "current",
+    "signature": "combineLatest(sources: [A*, B*]): [A, B]*",
+    "behavior": "After every source has supplied its first value, emit a tuple of the latest values whenever any source supplies another value.",
+    "details": [
+      "Subscription order matters for synchronous inputs: earlier sources can emit several times before the later sources are subscribed.",
+      "A completed source keeps its last value available. The result completes when all sources have completed; any source error terminates the result.",
+      "RxJS 7.8.2 still waits for all completions when a source completes empty. Therefore combineLatest([EMPTY, NEVER]) neither emits nor completes.",
+      "With zero sources, complete without a next value."
+    ],
+    "example": "combineLatest([of(1, 2), of('a', 'b')])\n// next: [2, 'a'], [2, 'b']; complete",
+    "overloads": "Shown for two Observable inputs. Any-length tuples, arrays, and keyed records are supported, and inputs may be ObservableInput. A record produces a record of latest values. Positional-source and scheduler-argument forms are deprecated.",
+    "related": [
+      "zip",
+      "forkJoin",
+      "withLatestFrom"
+    ],
+    "source": "internal/observable/combineLatest.ts",
+    "doc": "https://rxjs.dev/api/index/function/combineLatest",
+    "import": "rxjs"
+  },
+  {
+    "id": "concat",
+    "name": "concat",
+    "category": "Join Creation Operators",
+    "kind": "join-creation",
+    "status": "current",
+    "signature": "concat(first: A*, second: B*): (A | B)*",
+    "behavior": "Subscribe to the sources in sequence. Forward all values from the current source and move to the next only after it completes.",
+    "details": [
+      "A source that never completes prevents later sources from being subscribed.",
+      "An error ends the sequence immediately; subsequent sources are not started.",
+      "With no sources, complete without a next value. No scheduler is added by the common form."
+    ],
+    "example": "concat(of(1, 2), of(3)) // next: 1, 2, 3; complete",
+    "overloads": "Any number of ObservableInput sources can be passed as separate arguments. concat(...sources) joins an array of streams; concat(sources) instead treats that array as one input and emits its elements. A legacy scheduler overload is also available.",
+    "related": [
+      "concatAll",
+      "merge",
+      "onErrorResumeNext"
+    ],
+    "source": "internal/observable/concat.ts",
+    "doc": "https://rxjs.dev/api/index/function/concat",
+    "import": "rxjs"
+  },
+  {
+    "id": "forkJoin",
+    "name": "forkJoin",
+    "category": "Join Creation Operators",
+    "kind": "join-creation",
+    "status": "current",
+    "signature": "forkJoin(sources: [A*, B*]): [A, B]*",
+    "behavior": "Wait for all sources to complete, then emit one tuple containing each source's last value and complete. Every source must have supplied a value.",
+    "details": [
+      "If any source completes empty, the result completes without a next value and tears down active subscriptions.",
+      "Otherwise, a source that never completes prevents the final tuple, even if it has already emitted.",
+      "A source error terminates the result and tears down the other active inputs.",
+      "With zero sources, complete without a next value."
+    ],
+    "example": "forkJoin([of(1, 2), of('a', 'b')]) // next: [2, 'b']; complete",
+    "overloads": "Shown for a pair of Observables. Tuples of any length, arrays, and keyed records are supported; actual inputs may be ObservableInput. Positional-source overloads are deprecated. The result emits at most one tuple in the selected form.",
+    "related": [
+      "combineLatest",
+      "zip",
+      "toArray"
+    ],
+    "source": "internal/observable/forkJoin.ts",
+    "doc": "https://rxjs.dev/api/index/function/forkJoin",
+    "import": "rxjs"
+  },
+  {
+    "id": "merge",
+    "name": "merge",
+    "category": "Join Creation Operators",
+    "kind": "join-creation",
+    "status": "current",
+    "signature": "merge(first: A*, second: B*, concurrent?: number): (A | B)*",
+    "behavior": "Forward values from active sources as they arrive. Several sources may be subscribed at the same time.",
+    "details": [
+      "Concurrency defaults to Infinity. A positive concurrency limit delays subscriptions to excess sources until active ones complete.",
+      "Inputs are subscribed in argument order; synchronous earlier inputs can finish before later subscriptions begin.",
+      "Complete when all sources finish. An error terminates the result and tears down active inputs; zero sources complete empty."
+    ],
+    "example": "merge(of(1, 2), of('a')) // next: 1, 2, 'a'; complete",
+    "overloads": "Shown for two sources; any number of ObservableInput sources can be supplied. Pass a trailing positive number to set concurrency. Scheduler-argument overloads are deprecated.",
+    "related": [
+      "mergeAll",
+      "concat",
+      "race"
+    ],
+    "source": "internal/observable/merge.ts",
+    "doc": "https://rxjs.dev/api/index/function/merge",
+    "import": "rxjs"
+  },
+  {
+    "id": "partition",
+    "name": "partition",
+    "category": "Join Creation Operators",
+    "kind": "partition",
+    "status": "current",
+    "signature": "partition(source: A*, predicate: A => boolean): [A*, A*]",
+    "behavior": "Return two streams: one passes values for which the predicate is true, and the other passes values for which it is false.",
+    "details": [
+      "This is a pair of Observables, not an Observable that emits pairs.",
+      "Each branch subscribes to the input independently. Subscribing to both can run a cold source twice and evaluate the predicate separately.",
+      "partition does not introduce sharing; arrange sharing explicitly if both branches must observe one source execution."
+    ],
+    "example": "const [even$, odd$] = partition(of(1, 2, 3, 4), n => n % 2 === 0);\n// even$: 2, 4, complete; odd$: 1, 3, complete (separate subscriptions)",
+    "overloads": "The actual input may be ObservableInput, and predicates receive an index. A type-guard predicate narrows the true branch to B and the other branch to Exclude<A, B>. The standalone function is current; the old pipeable partition is deprecated.",
+    "related": [
+      "filter",
+      "share",
+      "partition-operator"
+    ],
+    "source": "internal/observable/partition.ts",
+    "doc": "https://rxjs.dev/api/index/function/partition",
+    "import": "rxjs"
+  },
+  {
+    "id": "race",
+    "name": "race",
+    "category": "Join Creation Operators",
+    "kind": "join-creation",
+    "status": "current",
+    "signature": "race(sources: [A*, B*]): (A | B)*",
+    "behavior": "The first next value selects the source whose subsequent values are forwarded. A completion or error before any next ends the result immediately.",
+    "details": [
+      "Once a source wins with a value, unsubscribe the other active candidates and follow the winner through its completion or error.",
+      "Sources are subscribed in order. A synchronous winner or terminal notification can prevent later sources from ever being subscribed.",
+      "Unlike most join creators, race([]) stays open without next values in RxJS 7.8.2."
+    ],
+    "example": "race([of('first'), of('second')])\n// next: 'first'; complete; the second source is never subscribed",
+    "overloads": "Array and separate-argument forms accept any number of ObservableInput sources. The output payload is the union of source payloads.",
+    "related": [
+      "merge",
+      "timeout",
+      "takeUntil"
+    ],
+    "source": "internal/observable/race.ts",
+    "doc": "https://rxjs.dev/api/index/function/race",
+    "import": "rxjs"
+  },
+  {
+    "id": "zip",
+    "name": "zip",
+    "category": "Join Creation Operators",
+    "kind": "join-creation",
+    "status": "current",
+    "signature": "zip(sources: [A*, B*]): [A, B]*",
+    "behavior": "Match values by position: first with first, second with second, and so on. Emit a tuple only when every input has supplied its next unmatched value.",
+    "details": [
+      "Faster sources wait in per-source queues; this can retain many values when rates differ.",
+      "Complete once a completed input has no buffered value left, because another full tuple is then impossible.",
+      "A source error terminates the result and tears down the other inputs. With zero inputs, complete without next values."
+    ],
+    "example": "zip([of(1, 2, 3), of('a', 'b')])\n// next: [1, 'a'], [2, 'b']; complete; unmatched 3 is discarded",
+    "overloads": "Any-length tuple and separate-argument forms accept ObservableInput sources. A result-selector overload maps each matched tuple to another payload type.",
+    "related": [
+      "combineLatest",
+      "forkJoin",
+      "zipWith"
+    ],
+    "source": "internal/observable/zip.ts",
+    "doc": "https://rxjs.dev/api/index/function/zip",
+    "import": "rxjs"
+  },
+  {
+    "id": "EMPTY",
+    "name": "EMPTY",
+    "category": "Creation Operators",
+    "kind": "constant",
+    "status": "current",
+    "signature": "EMPTY: never*",
+    "behavior": "An Observable constant that completes immediately without emitting a value.",
+    "details": [
+      "Each subscription receives a synchronous complete notification.",
+      "It differs from of(undefined), which emits one undefined value before completing."
+    ],
+    "example": "EMPTY // when subscribed: no next values; complete synchronously",
+    "overloads": "Use this constant for immediate empty completion; scheduled([], scheduler) makes completion scheduled.",
+    "related": [
+      "empty",
+      "NEVER",
+      "throwError"
+    ],
+    "source": "internal/observable/empty.ts",
+    "doc": "https://rxjs.dev/api/index/const/EMPTY",
+    "import": "rxjs"
+  },
+  {
+    "id": "NEVER",
+    "name": "NEVER",
+    "category": "Creation Operators",
+    "kind": "constant",
+    "status": "current",
+    "signature": "NEVER: never*",
+    "behavior": "An Observable constant that sends no next, error, or complete notifications.",
+    "details": [
+      "A subscription remains open until explicitly unsubscribed or ended by another operator.",
+      "The type never* says only that there are no next values; the absence of completion is this constant's behavior."
+    ],
+    "example": "NEVER.pipe(takeUntil(timer(1000)))\n// no next values; complete when the timer emits",
+    "overloads": "",
+    "related": [
+      "EMPTY",
+      "never",
+      "takeUntil"
+    ],
+    "source": "internal/observable/never.ts",
+    "doc": "https://rxjs.dev/api/index/const/NEVER",
+    "import": "rxjs"
+  },
+  {
+    "id": "scheduled",
+    "name": "scheduled",
+    "category": "Creation Operators",
+    "kind": "creation",
+    "status": "current",
+    "signature": "scheduled(input: Input<A>, scheduler: SchedulerLike): A*",
+    "behavior": "Convert an input into an Observable while using the supplied scheduler to control its consumption and delivery.",
+    "details": [
+      "For Observable inputs, subscription and notifications are scheduled. For arrays and synchronous iterables, element production is scheduled.",
+      "The scheduler determines timing; queueScheduler can run work synchronously, while other schedulers defer it.",
+      "Scheduling a promise conversion does not defer the work that created the already-existing promise, and unsubscription does not cancel that promise."
+    ],
+    "example": "scheduled([1, 2], asyncScheduler)\n// scheduled next: 1, 2; then scheduled complete",
+    "overloads": "Accepts ObservableInput, including async iterables and readable streams. This replaces many deprecated scheduler-argument overloads on creation functions.",
+    "related": [
+      "from",
+      "observeOn",
+      "subscribeOn"
+    ],
+    "source": "internal/scheduled/scheduled.ts",
+    "doc": "https://rxjs.dev/api/index/function/scheduled",
+    "import": "rxjs"
+  },
+  {
+    "id": "using",
+    "name": "using",
+    "category": "Creation Operators",
+    "kind": "creation",
+    "status": "current",
+    "signature": "using(resourceFactory: () => (Unsubscribable | void), observableFactory: (Unsubscribable | void) => (Input<A> | void)): A*",
+    "behavior": "Create a resource for a subscription and pass it to a factory that supplies that subscription's values. Dispose the resource when the established execution is torn down.",
+    "details": [
+      "Both factories run separately for each subscription. The resource exposes an unsubscribe method; the factory may also return no resource.",
+      "After setup succeeds, completion, error, or downstream unsubscription disposes the resource. A void Observable-factory result acts like EMPTY.",
+      "In 7.8.2, cleanup is registered after observableFactory returns: if that factory throws after allocating the resource, provide cleanup for that failure path yourself."
+    ],
+    "example": "using(\n  () => ({ unsubscribe: () => console.log('disposed') }),\n  () => of(1, 2)\n) // next: 1, 2; complete; resource cleanup logs 'disposed'",
+    "overloads": "The actual Observable factory can return any ObservableInput, or void. The displayed resource contract is the API's Unsubscribable | void type.",
+    "related": [
+      "defer",
+      "finalize"
+    ],
+    "source": "internal/observable/using.ts",
+    "doc": "https://rxjs.dev/api/index/function/using",
+    "import": "rxjs"
+  },
+  {
+    "id": "animationFrames",
+    "name": "animationFrames",
+    "category": "Creation Operators",
+    "kind": "creation",
+    "status": "current",
+    "signature": "animationFrames(timestampProvider?: TimestampProvider): ({ timestamp: number, elapsed: number })*",
+    "behavior": "Emit a timing record on each animation frame. elapsed measures the time since this subscription began.",
+    "details": [
+      "Uses requestAnimationFrame; each subscription has its own frame loop and starting time.",
+      "Without a custom provider, timestamp comes from the animation-frame callback and elapsed uses performance timing.",
+      "A custom TimestampProvider supplies the current time used for both fields. Unsubscription cancels the pending frame request."
+    ],
+    "example": "animationFrames().pipe(take(2))\n// next: timing records for two animation frames; then complete",
+    "overloads": "Requires an environment with animation-frame support. It does not complete by itself.",
+    "related": [
+      "interval",
+      "timestamp"
+    ],
+    "source": "internal/observable/dom/animationFrames.ts",
+    "doc": "https://rxjs.dev/api/index/function/animationFrames",
+    "import": "rxjs"
+  },
+  {
+    "id": "fromFetch",
+    "name": "fromFetch",
+    "category": "Creation Operators",
+    "kind": "creation",
+    "status": "current",
+    "signature": "fromFetch(input: string | Request, init?: RequestInit): Response*",
+    "behavior": "Start a fetch request per subscription. In the default form, emit the Response when it is available and then complete; reading its body is a separate step.",
+    "details": [
+      "HTTP error status codes still produce Response values; inspect response.ok or response.status when deciding whether to treat them as errors.",
+      "Network failures and abort failures use the error channel.",
+      "Unsubscribing while the fetch is pending aborts it. In the default form, automatic abort stops once the Response has been delivered.",
+      "The selector form keeps the request abortable while the selected input, such as response.json(), is being consumed."
+    ],
+    "example": "fromFetch('/api/profile', { selector: response => response.json() })\n// On successful JSON decoding: next the decoded body; complete",
+    "overloads": "With init.selector: Response => Input<A>, the result is A*. Use that form to include body consumption in the subscription's lifetime; the return type of response.json() itself does not validate a domain schema.",
+    "related": [
+      "ajax",
+      "switchMap",
+      "catchError"
+    ],
+    "source": "internal/observable/dom/fetch.ts",
+    "doc": "https://rxjs.dev/api/fetch/fromFetch",
+    "import": "rxjs/fetch"
+  },
+  {
+    "id": "webSocket",
+    "name": "webSocket",
+    "category": "Creation Operators",
+    "kind": "creation",
+    "status": "current",
+    "signature": "webSocket(urlOrConfig: string | WebSocketSubjectConfig<A>): WebSocketSubject<A>",
+    "behavior": "Create a duplex WebSocket endpoint: subscribing receives A values, while calling next sends A values to the server.",
+    "details": [
+      "The first subscription opens the socket; subscribers to the same WebSocketSubject share that connection. When its last observer unsubscribes, it closes the socket.",
+      "Outgoing values sent before the socket opens are queued. Sending a value does not also emit it locally as an incoming value.",
+      "The default serializer uses JSON.stringify and the default deserializer uses JSON.parse; configure them for a different wire format.",
+      "A clean socket close completes its observers; an unclean close or socket error errors them."
+    ],
+    "example": "const messages = webSocket<{ text: string }>('wss://example.test/messages');\n// messages.subscribe(...): receive server messages\n// messages.next({ text: 'hello' }): send a message",
+    "overloads": "WebSocketSubject<A> is both an A* read side and an Observer<A> write side, so reducing the return type to A* would hide its duplex behavior. Configuration supports custom serialization, deserialization, lifecycle observers, and a WebSocket constructor.",
+    "related": [
+      "fromEvent",
+      "share"
+    ],
+    "source": "internal/observable/dom/webSocket.ts",
+    "doc": "https://rxjs.dev/api/webSocket/webSocket",
+    "import": "rxjs/webSocket"
+  },
+  {
+    "id": "connectable",
+    "name": "connectable",
+    "category": "Multicasting Operators",
+    "kind": "connectable",
+    "status": "current",
+    "signature": "connectable(source: A*, config?: ConnectableConfig<A>): Connectable<A>",
+    "behavior": "Create a shared stream with an explicit connection switch. Subscribers attach to the shared subject; connect() starts the source subscription.",
+    "details": [
+      "The default connector creates a plain Subject, so it does not replay earlier values to later subscribers.",
+      "connect() returns the shared connection Subscription. Unsubscribing that connection disconnects the source; merely having no observers does not automatically disconnect it.",
+      "By default, resetOnDisconnect is true: ending a connection replaces the subject for future subscriptions and connections. Existing observers are not moved to the replacement subject.",
+      "Attach observers before connecting when synchronous source values must reach them."
+    ],
+    "example": "const shared = connectable(of(1, 2));\nshared.subscribe(console.log); // no source values yet\nshared.connect(); // next: 1, 2; complete",
+    "overloads": "The actual source may be ObservableInput. Connectable<A> is an A* with connect(): Subscription. A supplied config provides a connector factory and may select resetOnDisconnect; replay requires an appropriate connector.",
+    "related": [
+      "share",
+      "connect",
+      "multicast"
+    ],
+    "source": "internal/observable/connectable.ts",
+    "doc": "https://rxjs.dev/api/index/function/connectable",
+    "import": "rxjs"
+  },
+  {
+    "id": "onErrorResumeNext",
+    "name": "onErrorResumeNext",
+    "category": "Join Creation Operators",
+    "kind": "join-creation",
+    "status": "current",
+    "signature": "onErrorResumeNext(sources: [A*, B*]): (A | B)*",
+    "behavior": "Run sources one after another, moving to the next after either completion or error. Values pass through; source errors do not.",
+    "details": [
+      "A normally completing source also advances to the next one; this is not a fallback that runs only on error.",
+      "An error from a source is swallowed, so this operator cannot inspect it or choose recovery based on it.",
+      "A source that never ends blocks the remaining sources. Once all sources have ended, complete; an empty list completes immediately."
+    ],
+    "example": "onErrorResumeNext([of(1), throwError(() => new Error('skip')), of(2)])\n// next: 1, 2; complete; the intermediate error is swallowed",
+    "overloads": "Array and separate-argument forms accept ObservableInput sources. This standalone creator is current. Use onErrorResumeNextWith for the current pipeable form.",
+    "related": [
+      "concat",
+      "catchError",
+      "onErrorResumeNextWith"
+    ],
+    "source": "internal/observable/onErrorResumeNext.ts",
+    "doc": "https://rxjs.dev/api/index/function/onErrorResumeNext",
+    "import": "rxjs"
+  },
+  {
+    "id": "never",
+    "name": "never",
+    "category": "Creation Operators",
+    "kind": "creation",
+    "status": "deprecated",
+    "signature": "never(): never*",
+    "behavior": "Return NEVER: a stream that sends no notifications and has no natural termination.",
+    "details": [
+      "The returned subscription stays open until it is unsubscribed or another operator ends it.",
+      "This legacy function and the NEVER constant describe the same behavior."
+    ],
+    "example": "never() // when subscribed: no next, no error, no complete",
+    "overloads": "The function is deprecated in RxJS 7.8.2.",
+    "related": [
+      "NEVER",
+      "EMPTY"
+    ],
+    "source": "internal/observable/never.ts",
+    "doc": "https://rxjs.dev/api/index/function/never",
+    "import": "rxjs",
+    "replacement": "NEVER"
+  },
+  {
+    "id": "pairs",
+    "name": "pairs",
+    "category": "Creation Operators",
+    "kind": "creation",
+    "status": "deprecated",
+    "signature": "pairs(object: Record<string, A>, scheduler?: SchedulerLike): [string, A]*",
+    "behavior": "Emit the own enumerable string-keyed entries of an object as key-value tuples, then complete.",
+    "details": [
+      "The implementation calls Object.entries when pairs is called, so the entry array is captured before subscription.",
+      "Without a scheduler, emit the entries synchronously on subscription. Symbol keys and inherited properties are not included.",
+      "The tuples hold the original property values; referenced objects are not deeply copied."
+    ],
+    "example": "pairs({ a: 1, b: 2 }) // next: ['a', 1], ['b', 2]; complete",
+    "overloads": "Shown for a homogeneous string-keyed record. The legacy API has additional input overloads and an optional scheduler. Its implementation uses Object.entries rather than consuming an iterable protocol.",
+    "related": [
+      "from",
+      "scheduled"
+    ],
+    "source": "internal/observable/pairs.ts",
+    "doc": "https://rxjs.dev/api/index/function/pairs",
+    "import": "rxjs",
+    "replacement": "from(Object.entries(object)); use scheduled(Object.entries(object), scheduler) for scheduled delivery."
+  }
+]
