@@ -1,6 +1,6 @@
 import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
-import { cards, metadata, scope, stats, root, title, categoryId } from './catalog.mjs';
+import { cards, metadata, scope, stats, root, title, categoryId, readJson } from './catalog.mjs';
 
 const check = process.argv.includes('--check');
 const generated = [];
@@ -70,6 +70,52 @@ for (const category of scope.categories) {
 }
 index += '† Deprecated API in the pinned version. ‡ Supplement to the supplied operator list. An operator with only deprecated overloads is not marked deprecated.\n\n' + note + '\n';
 output('docs/signature-index.md', index);
+
+// Extract the stored signatures without copying behavior or example prose.
+const patternGroups = readJson('catalog/type-patterns.json').groups;
+const formsById = new Map(cards.map(card => [card.id, card.signature.split(new RegExp('\\n(?=' + card.name + '\\()'))]));
+const expectedForms = new Set([...formsById].flatMap(([id, forms]) => forms.map((_, form) => `${id}:${form}`)));
+const seenForms = new Set();
+const seenApis = new Set();
+const groupIds = new Set();
+const patterns = patternGroups.map(group => {
+  if (!group.id || groupIds.has(group.id)) throw new Error(`Invalid or duplicate type pattern group: ${group.id}`);
+  groupIds.add(group.id);
+  const subgroups = group.subgroups.map(subgroup => ({
+    ...subgroup,
+    signatures: subgroup.members.map(member => {
+      const { id, form = 0 } = typeof member === 'string' ? { id: member } : member;
+      const key = `${id}:${form}`;
+      if (!expectedForms.has(key) || seenForms.has(key)) throw new Error(`Invalid or repeated type pattern signature: ${key}`);
+      seenForms.add(key);
+      seenApis.add(id);
+      return formsById.get(id)[form];
+    }),
+  }));
+  return { ...group, subgroups, count: subgroups.reduce((total, subgroup) => total + subgroup.signatures.length, 0) };
+});
+const missingForms = [...expectedForms].filter(key => !seenForms.has(key));
+if (missingForms.length) throw new Error(`Signatures missing from type patterns: ${missingForms.join(', ')}`);
+let typePatterns = [
+  '# Cω shorthand grouped by type pattern', '',
+  `**RxJS ${scope.rxjsVersion} · ${seenApis.size} API entries · ${seenForms.size} selected signatures · ${patterns.length} pattern families**`, '',
+  'The Cω-inspired signatures from the [complete operator reference](operator-reference.md), grouped by input/output shape and the type of the supplied function.[^gpt6]', '',
+  '`A*` means `Observable<A>`. `A[]` is one array value, `(A[])*` is a stream of arrays, `[A*, B*]` is a tuple of streams, and `(A*)*` is a stream of streams. [Full notation](notation.md).', '',
+  'The signatures are copied verbatim from the catalog. Family patterns summarize their structure. Matching type patterns do not imply matching timing, cancellation, sharing, or termination. The selected `*` suffixes are retained.', '',
+  '`timeout` has two selected forms, placed under their respective result shapes. Creation and legacy pipeable APIs with the same name remain separate. Legacy aliases are retained; API status, import paths, and overload scope are in the full reference.', '',
+  '## Pattern overview', '',
+  '| Family | Main shape | Signatures |',
+  '| --- | --- | ---: |',
+  ...patterns.map((group, i) => `| [${i + 1}. ${group.title}](#${group.id}) | ${cell('`' + group.pattern + '`')} | ${group.count} |`), '',
+].join('\n');
+for (const [i, group] of patterns.entries()) {
+  typePatterns += `\n<a id="${group.id}"></a>\n## ${i + 1}. ${group.title}\n\n`;
+  for (const subgroup of group.subgroups) {
+    typePatterns += `### ${subgroup.title}\n\n${codeBlock(subgroup.pattern)}\n\n${codeBlock(subgroup.signatures.join('\n'))}\n\n`;
+  }
+}
+typePatterns += note + '\n';
+output('docs/type-patterns.md', typePatterns);
 
 let coverage = `# Coverage and verification scope\n\nPinned implementation: **RxJS ${scope.rxjsVersion}**. This is a complete reference for the declared API surfaces, not every symbol in the RxJS package.[^gpt6]\n\n`;
 coverage += `- **${stats.entries}** total entries.\n- **${stats.requested}** entries from the supplied list, including both partition APIs.\n- **${stats.supplemental}** additional entries.\n- **${stats.operatorExports}** function exports from rxjs/operators covered, including legacy aliases.\n- **${stats.creationExports}** core static creation exports, plus animationFrames, EMPTY, NEVER, ajax, fromFetch, and webSocket.\n- The current root-exported onErrorResumeNextWith is included in addition to its legacy pipeable alias.\n- **${stats.deprecated}** entries marked deprecated based on the pinned source.\n\n`;

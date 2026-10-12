@@ -13,6 +13,8 @@ Change the relevant card in one of these files:
 
 Use `catalog/metadata.json` for the shared legend, glossary, attribution, and category introductions. Use `catalog/scope.json` only when deliberately changing the declared coverage. Preserve a card's stable ID so existing classroom links keep working. The supplied list and supplemental coverage are tracked separately.
 
+Use `catalog/type-patterns.json` to organize the signatures-only view by type shape. It references card IDs and, for multi-form entries such as `timeout`, the zero-based form index. The build extracts the original signature text and checks that every selected form appears exactly once across the groups.
+
 Every card needs a named signature, one or two short behavior sentences, two to four execution notes, an example, relevant overload scope, related card IDs, the import path, and the primary implementation path. An API marked deprecated needs a useful migration note. A deprecated overload alone does not make the entire operator deprecated.
 
 ## Check meaning before expanding notation
@@ -38,6 +40,6 @@ npm run pdf
 
 The catalog/export check catches missing entries and invalid source paths. TypeScript compilation checks the native companion. The semantic tests verify selected behavior contracts with deterministic input sequences and virtual clocks. Add a test when a change resolves a concrete ambiguity or regression; avoid tests that only restate implementation details.
 
-Generated outputs are `docs/operator-reference.md`, `docs/signature-index.md`, `docs/coverage.md`, `docs/catalog.json`, and `docs/index.html`. Rebuild them from the catalog. Rebuild and visually review the PDF after a release change; its script uses the same card data.
+Generated outputs are `docs/operator-reference.md`, `docs/signature-index.md`, `docs/type-patterns.md`, `docs/coverage.md`, `docs/catalog.json`, and `docs/index.html`. Rebuild them from the catalog. Rebuild and visually review the PDF after a release change; its script uses the same card data.
 
 For substantive corrections, explain the learner-facing problem, the resulting behavior description, the primary source, and the relevant verification. Keep project credits accurate and preserve the requested attribution footnote.

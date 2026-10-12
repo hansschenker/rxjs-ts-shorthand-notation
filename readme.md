@@ -25,6 +25,7 @@ switchMap(project: A => B*): A* => B*
 | **[Printable handbook](output/pdf/rxjs-deep-dive-handbook.pdf)** | Teach or annotate the complete reference as a PDF, including notation, category navigation, and a glossary. |
 | **[Searchable reference](docs/index.html)** | Search by operator or behavior, filter by category or API status, switch to compact signatures, and print the visible selection. Download the file and open it in a browser; no server or internet connection is required for its content and controls. |
 | **[Compact signature index](docs/signature-index.md)** | Compare related type shapes at a glance. |
+| **[Cω signatures grouped by type pattern](docs/type-patterns.md)** | Read only the shorthand definitions, grouped into 14 families by stream shape and supplied function type. |
 | **[Teaching guide and exercises](docs/teaching-guide.md)** | Follow Intuition → Specification → Verification, with comparison tables and seven exercises with answers. |
 | **[Notation and TypeScript translation](docs/notation.md)** | Introduce the grammar, the role of parameter names, and the boundaries of the shorthand. |
 | **[Occurrence refinements](docs/cardinality.md)** | Teach `T?`, `T!`, and `T+` with explicit subscription and termination assumptions. |

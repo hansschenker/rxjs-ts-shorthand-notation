@@ -1,0 +1,532 @@
+{
+  "groups": [
+    {
+      "id": "same-payload",
+      "title": "Same payload type",
+      "pattern": "A* => A*",
+      "subgroups": [
+        {
+          "title": "Value predicates",
+          "pattern": "A => boolean",
+          "members": [
+            "filter",
+            "first",
+            "last",
+            "single",
+            "skipWhile",
+            "takeWhile"
+          ]
+        },
+        {
+          "title": "Keys and comparisons",
+          "pattern": "A => K; (A, A) => boolean; (A, A) => number",
+          "members": [
+            "distinct",
+            "distinctUntilChanged",
+            "distinctUntilKeyChanged",
+            "min",
+            "max"
+          ]
+        },
+        {
+          "title": "Control streams",
+          "pattern": "unknown*; A => unknown*",
+          "members": [
+            "audit",
+            "debounce",
+            "throttle",
+            "delayWhen",
+            "sample",
+            "skipUntil",
+            "takeUntil"
+          ]
+        },
+        {
+          "title": "Control stream transformations",
+          "pattern": "unknown* => unknown*; void* => unknown*",
+          "members": [
+            "retryWhen",
+            "repeatWhen"
+          ]
+        },
+        {
+          "title": "Effects and cleanup",
+          "pattern": "A => void; () => void",
+          "members": [
+            "tap",
+            "finalize"
+          ]
+        },
+        {
+          "title": "Positions, counts, time, and configuration",
+          "pattern": "A* => A*",
+          "members": [
+            "elementAt",
+            "skip",
+            "skipLast",
+            "take",
+            "takeLast",
+            "auditTime",
+            "debounceTime",
+            "sampleTime",
+            "throttleTime",
+            "delay",
+            "observeOn",
+            "subscribeOn",
+            "share",
+            "shareReplay",
+            "retry",
+            "repeat",
+            "throwIfEmpty",
+            {
+              "id": "timeout",
+              "form": 0
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "payload-shapes",
+      "title": "Other payload shapes",
+      "pattern": "A* => B*; Notice<A>* => A*",
+      "subgroups": [
+        {
+          "title": "Value and constant results",
+          "pattern": "A* => B*",
+          "members": [
+            "map",
+            "mapTo"
+          ]
+        },
+        {
+          "title": "Property results",
+          "pattern": "A* => (A[K])*",
+          "members": [
+            "pluck"
+          ]
+        },
+        {
+          "title": "Record results",
+          "pattern": "A* => { value: A; ... }*",
+          "members": [
+            "timeInterval",
+            "timestamp"
+          ]
+        },
+        {
+          "title": "Notification values",
+          "pattern": "A* => Notice<A>*; Notice<A>* => A*",
+          "members": [
+            "materialize",
+            "dematerialize"
+          ]
+        },
+        {
+          "title": "Boolean results",
+          "pattern": "A* => boolean*",
+          "members": [
+            "every",
+            "isEmpty",
+            "sequenceEqual"
+          ]
+        },
+        {
+          "title": "Number results",
+          "pattern": "A* => number*",
+          "members": [
+            "count",
+            "findIndex"
+          ]
+        },
+        {
+          "title": "An explicit undefined alternative",
+          "pattern": "A* => (A | undefined)*",
+          "members": [
+            "find"
+          ]
+        },
+        {
+          "title": "No next payload",
+          "pattern": "A* => never*",
+          "members": [
+            "ignoreElements"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "state-results",
+      "title": "State results",
+      "pattern": "A* => S*",
+      "subgroups": [
+        {
+          "title": "A function returning a state value",
+          "pattern": "(S, A) => S",
+          "members": [
+            "scan",
+            "reduce"
+          ]
+        },
+        {
+          "title": "A function returning a stream of state values",
+          "pattern": "(S, A) => S*",
+          "members": [
+            "mergeScan",
+            "switchScan"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "inner-selection",
+      "title": "Selecting or supplying inner streams",
+      "pattern": "(A => B*) => (A* => B*); B* => (A* => B*)",
+      "subgroups": [
+        {
+          "title": "A value selects a stream",
+          "pattern": "A => B*",
+          "members": [
+            "mergeMap",
+            "concatMap",
+            "switchMap",
+            "exhaustMap",
+            "flatMap"
+          ]
+        },
+        {
+          "title": "A stream is supplied directly",
+          "pattern": "B*",
+          "members": [
+            "mergeMapTo",
+            "concatMapTo",
+            "switchMapTo"
+          ]
+        },
+        {
+          "title": "The selected stream has the input payload type",
+          "pattern": "A => A*",
+          "members": [
+            "expand"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "arrays-tuples",
+      "title": "Arrays and same type tuples",
+      "pattern": "A* => (A[])*; A* => [A, A]*",
+      "subgroups": [
+        {
+          "title": "Array results",
+          "pattern": "A* => (A[])*",
+          "members": [
+            "buffer",
+            "bufferCount",
+            "bufferTime",
+            "bufferToggle",
+            "bufferWhen",
+            "toArray"
+          ]
+        },
+        {
+          "title": "A tuple with two values of the input type",
+          "pattern": "A* => [A, A]*",
+          "members": [
+            "pairwise"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "nested-results",
+      "title": "Nested stream results",
+      "pattern": "A* => (A*)*",
+      "subgroups": [
+        {
+          "title": "Streams as payloads",
+          "pattern": "A* => (A*)*",
+          "members": [
+            "window",
+            "windowCount",
+            "windowTime",
+            "windowToggle",
+            "windowWhen"
+          ]
+        },
+        {
+          "title": "Streams with a key property as payloads",
+          "pattern": "A* => (A* & { readonly key: K })*",
+          "members": [
+            "groupBy"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "flattening",
+      "title": "Nested stream inputs",
+      "pattern": "(A*)* => A*",
+      "subgroups": [
+        {
+          "title": "A stream of streams becomes a stream of values",
+          "pattern": "(A*)* => A*",
+          "members": [
+            "mergeAll",
+            "concatAll",
+            "switchAll",
+            "exhaustAll",
+            "exhaust"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "product-joins",
+      "title": "Tuple and array joins",
+      "pattern": "[A*, B*] => [A, B]*; (A*)* => (A[])*",
+      "subgroups": [
+        {
+          "title": "Creation forms with a tuple of sources",
+          "pattern": "[A*, B*] => [A, B]*",
+          "members": [
+            "combineLatest",
+            "zip",
+            "forkJoin"
+          ]
+        },
+        {
+          "title": "Pipeable forms with another source",
+          "pattern": "A* => [A, B]*",
+          "members": [
+            "withLatestFrom",
+            "combineLatestWith",
+            "zipWith"
+          ]
+        },
+        {
+          "title": "Legacy pipeable forms with another source",
+          "pattern": "A* => [A, B]*",
+          "members": [
+            "combineLatest-operator",
+            "zip-operator"
+          ]
+        },
+        {
+          "title": "Nested sources with array results",
+          "pattern": "(A*)* => (A[])*",
+          "members": [
+            "combineLatestAll",
+            "zipAll",
+            "combineAll"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "union-results",
+      "title": "Union payload results",
+      "pattern": "(A | B)*",
+      "subgroups": [
+        {
+          "title": "Creation forms with several sources",
+          "pattern": "[A*, B*] => (A | B)*\n(A*, B*) => (A | B)*",
+          "members": [
+            "concat",
+            "merge",
+            "race",
+            "onErrorResumeNext"
+          ]
+        },
+        {
+          "title": "Pipeable forms with another source",
+          "pattern": "A* => (A | B)*",
+          "members": [
+            "concatWith",
+            "mergeWith",
+            "raceWith",
+            "onErrorResumeNextWith"
+          ]
+        },
+        {
+          "title": "Legacy pipeable forms with another source",
+          "pattern": "A* => (A | B)*",
+          "members": [
+            "concat-operator",
+            "merge-operator",
+            "race-operator",
+            "onErrorResumeNext-operator"
+          ]
+        },
+        {
+          "title": "Additional values",
+          "pattern": "A* => (A | B)*",
+          "members": [
+            "startWith",
+            "endWith",
+            "defaultIfEmpty"
+          ]
+        },
+        {
+          "title": "Recovery and fallback streams",
+          "pattern": "A* => (A | B)*",
+          "members": [
+            "catchError",
+            {
+              "id": "timeout",
+              "form": 1
+            },
+            "timeoutWith"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "partition",
+      "title": "A tuple of result streams",
+      "pattern": "A* => [A*, A*]",
+      "subgroups": [
+        {
+          "title": "Creation form",
+          "pattern": "[A*, A*]",
+          "members": [
+            "partition"
+          ]
+        },
+        {
+          "title": "Legacy pipeable form",
+          "pattern": "A* => [A*, A*]",
+          "members": [
+            "partition-operator"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "whole-stream",
+      "title": "A function on whole streams",
+      "pattern": "(A* => B*) => (A* => B*)",
+      "subgroups": [
+        {
+          "title": "A whole stream selector",
+          "pattern": "A* => B*",
+          "members": [
+            "connect"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "capabilities",
+      "title": "Stream objects with additional capabilities",
+      "pattern": "Connectable<A>; ConnectableObservable<A>; WebSocketSubject<A>",
+      "subgroups": [
+        {
+          "title": "Connectable creation form",
+          "pattern": "Connectable<A>",
+          "members": [
+            "connectable"
+          ]
+        },
+        {
+          "title": "Legacy connectable results",
+          "pattern": "A* => ConnectableObservable<A>",
+          "members": [
+            "multicast",
+            "publish",
+            "publishBehavior",
+            "publishLast",
+            "publishReplay"
+          ]
+        },
+        {
+          "title": "A connectable object as input",
+          "pattern": "ConnectableObservable<A> => A*",
+          "members": [
+            "refCount"
+          ]
+        },
+        {
+          "title": "A duplex stream object",
+          "pattern": "WebSocketSubject<A>",
+          "members": [
+            "webSocket"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "creation",
+      "title": "Direct stream creation",
+      "pattern": "(...): A*",
+      "subgroups": [
+        {
+          "title": "General payloads",
+          "pattern": "A*",
+          "members": [
+            "of",
+            "from",
+            "scheduled",
+            "defer",
+            "fromEvent",
+            "fromEventPattern",
+            "generate",
+            "using"
+          ]
+        },
+        {
+          "title": "Number payloads",
+          "pattern": "number*",
+          "members": [
+            "interval",
+            "timer",
+            "range"
+          ]
+        },
+        {
+          "title": "No next payload",
+          "pattern": "never*",
+          "members": [
+            "empty",
+            "EMPTY",
+            "never",
+            "NEVER",
+            "throwError"
+          ]
+        },
+        {
+          "title": "Named and structured payloads",
+          "pattern": "AjaxResponse<A>*; Response*; { ... }*; [string, A]*",
+          "members": [
+            "ajax",
+            "fromFetch",
+            "animationFrames",
+            "pairs"
+          ]
+        },
+        {
+          "title": "A conditional union payload",
+          "pattern": "(A | B)*",
+          "members": [
+            "iif"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "callback-functions",
+      "title": "Functions that return streams",
+      "pattern": "(...): A => B*",
+      "subgroups": [
+        {
+          "title": "Callback function adapters",
+          "pattern": "A => B*",
+          "members": [
+            "bindCallback",
+            "bindNodeCallback"
+          ]
+        }
+      ]
+    }
+  ]
+}
